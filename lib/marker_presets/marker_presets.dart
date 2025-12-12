@@ -69,8 +69,9 @@ class MarkerPresets {
     final cTR2 = Offset(cx + radius, cy - k);
 
     final cRB1 = Offset(cx + radius, cy + k);
-    final cRB2 = Offset(cx + k, cy + radius - (radius / 3));
-
+    final cRB2 = Offset(cx + k, cy + radius - (radius / 3)); 
+    // Moving control points inward by radius/3 for concave effect of the raindrop.
+    // You can adjust this value for more or less pronounced effect.
     final cBL1 = Offset(cx - k, cy + radius - (radius / 3));
     final cBL2 = Offset(cx - radius, cy + k);
 
