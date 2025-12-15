@@ -1,5 +1,6 @@
 import 'package:example/marker_demo_page.dart';
 import 'package:example/marker_demo_simple.dart';
+import 'package:example/pricetag_marker_demo.dart';
 import 'package:flutter/material.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -29,6 +30,14 @@ class AppDrawer extends StatelessWidget {
             onTap: () {
               Navigator.pop(context); // Close the drawer
               Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const MarkerDemoSimple()));
+            },
+          ),
+           ListTile(
+            leading: const Icon(Icons.pin_drop),
+            title: const Text('Price Tag Marker Demo'),
+            onTap: () {
+              Navigator.pop(context); // Close the drawer
+              Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const PriceTagMarkerDemo()));
             },
           ),
         ],
