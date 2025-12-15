@@ -1,6 +1,6 @@
 <div align="center">
   <h1>Flutter Map Markers</h1>
-  <p>High-performance canvas-based marker rendering for flutter_map</p>
+  <p>Canvas based marker rendering for <a href="https://pub.dev/packages/flutter_map">flutter_map</a></p>
 </div>
 
 <hr>
@@ -8,20 +8,19 @@
 <h2>Overview</h2>
 
 <p>
-  <code>flutter_map_markers</code> is a powerful Flutter package that provides a high-performance canvas-based marker layer for <code>flutter_map</code>. It enables you to render thousands of interactive markers directly on the map canvas with excellent performance and minimal overhead.
+  <code>flutter_map_markers</code> is a powerful Flutter plugin for flutter_maps package that provides a flexible canvas based marker layer. It enables you to render thousands of interactive markers directly on the map canvas with excellent performance and minimal overhead.
 </p>
 
 <h2>Features</h2>
 
 <ul>
-  <li><strong>High Performance</strong> - Render thousands of markers efficiently using direct canvas painting</li>
   <li><strong>Interactive Markers</strong> - Support for tap, double-tap, long-press, and hover gestures</li>
   <li><strong>Custom Hit Detection</strong> - Define custom hit areas for complex marker shapes</li>
   <li><strong>Marker Rotation</strong> - Counter-rotate markers to maintain orientation during map rotation</li>
-  <li><strong>Smart Culling</strong> - Automatically cull markers outside the visible viewport</li>
-  <li><strong>Debug Tools</strong> - Visual debugging for marker bounds and hit areas</li>
-  <li><strong>Preset Shapes</strong> - Built-in marker presets like balloon markers with customizable styles</li>
+  <li><strong>Culling</strong> - Automatically cull markers outside the visible viewport</li>
+  <li><strong>Preset Shapes</strong> - Built in marker presets</li>
   <li><strong>Flexible Rendering</strong> - Full control over marker appearance using Canvas API</li>
+  <li><strong>Zoom Level Awareness</strong> - Change marker graphics based on current zoom level</li>
 </ul>
 
 <h2>Getting Started</h2>
@@ -33,8 +32,8 @@
 ```yaml
 dependencies:
   flutter_map_markers: ^0.0.1
-  flutter_map: ^8.2.2
-  latlong2: ^0.9.1
+  flutter_map: add latest version
+  latlong2: add latest version
 ```
 
 <p>Then run:</p>
