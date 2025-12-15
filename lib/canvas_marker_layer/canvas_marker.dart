@@ -18,9 +18,9 @@ typedef HitArea =
       int zoomLevel,
     );
 
-///TileMarker is a class used to draw markers on a tile.
+///CanvasMarker is a class used to draw markers on a tile.
 ///[painter] must be provided to draw the marker.
-/// Provide markers to the [MarkerTileManager] and set the [MarkerTileManager] to the [MarkerTileLayer] to display them on the map.
+/// Provide markers as List to [CanvasMarkerLayer].
 class CanvasMarker {
   ///This is a LatLng object that represents the position of the marker on the map.
   coord.LatLng position;
@@ -51,15 +51,10 @@ class CanvasMarker {
   ///
   /// This is a regular painter that uses the Canvas API to draw markers.
   /// Generally it is performant enough for most use cases. But it can suffer from overdraw issues when rendering many markers.
-  /// However, it draws once per tile-per zoom level, so it is still efficient and caches the result as an image.
-  /// First paint is slower but because it is cached, subsequent loads of the same tile are significantly faster.
+  /// Keep values computed outside the painter function for better performance.
   ///
-  /// The painter must return a [Rect] that represents the area covered by the drawn marker. This [Rect] is used to determine which tiles the marker should appear on.
-  /// - If the returned [Rect] spans multiple tiles, the marker will be drawn on all intersecting tiles, forming a complete visual.
-  /// - If the marker appears cut off at tile edges, it is likely due to an incorrectly calculated [Rect].
-  /// - Tile inclusion is currently determined by checking whether the [Rect] intersects the tile bounds.
-  /// - As a result, even if the visible part of the marker isn't on a tile, it may still be indexed and drawn if the [Rect] overlaps it.
-  /// - The returned [Rect] is also used for hit testing, so it must be precise.
+  /// The painter must return a [Rect] that represents the area covered by the drawn marker.
+  /// - The returned [Rect] is also used for culling and hit testing, so it must be precise.
   ///
   /// The [painter] function provides several parameters:
   ///
@@ -69,9 +64,6 @@ class CanvasMarker {
   /// - [latLngToPixelOffset]: A function that converts geographic coordinates (LatLng) to pixel offsets. Useful for drawing lines or shapes between coordinates.
   /// - [zoomLevel]: The current zoom level, which can be used to scale graphics based on the zoom level.
   ///
-  /// There is a parameter for the [MarkerTileManager] [int? drawWithCanvasZoom].
-  /// When zooming closer it might be more performant to draw markers directly on the canvas instead of using the cached image.
-  /// If this is provided, canvas will be drawn directly using Canvas API, without caching the result as an image at zoom level >= drawWithCanvasZoom.
   CanvasPainter painter;
 
   /// If true then counter rotates the marker to camera rotation.
@@ -81,17 +73,7 @@ class CanvasMarker {
   /// Callback function that is called when the marker is tapped.
   final Function? onTap;
 
-  /// Callback function that is called when the marker is double tapped.
-  final Function? onDoubleTap;
-
-  /// Callback function that is called when the marker is long pressed.
-  final Function? onLongPress;
-
-  /// Callback function that is called when the mouse hovers over the marker.
-  /// The boolean parameter indicates whether the mouse is hovering (true) or not (false).
-  final Function(bool)? onHover;
-
-  CanvasMarker({required this.position, required this.painter, this.hitArea, this.rotate = false, this.onTap, this.onDoubleTap, this.onLongPress, this.onHover});
+  CanvasMarker({required this.position, required this.painter, this.hitArea, this.rotate = false, this.onTap,});
 
   Map<String, dynamic> toJson() => {'lat': position.latitude, 'lng': position.longitude};
 
@@ -112,9 +94,6 @@ class CanvasMarker {
       hitArea: hitArea ?? this.hitArea,
       rotate: rotate ?? this.rotate,
       onTap: onTap ?? this.onTap,
-      onDoubleTap: onDoubleTap ?? this.onDoubleTap,
-      onLongPress: onLongPress ?? this.onLongPress,
-      onHover: onHover ?? this.onHover,
     );
   }
 
@@ -132,14 +111,11 @@ class CanvasMarker {
         painter == otherMarker.painter &&
         hitArea == otherMarker.hitArea &&
         rotate == otherMarker.rotate &&
-        onTap == otherMarker.onTap &&
-        onDoubleTap == otherMarker.onDoubleTap &&
-        onLongPress == otherMarker.onLongPress &&
-        onHover == otherMarker.onHover;
+        onTap == otherMarker.onTap;
   }
 
   @override
   int get hashCode {
-    return position.hashCode ^ painter.hashCode ^ hitArea.hashCode ^ rotate.hashCode ^ onTap.hashCode ^ onDoubleTap.hashCode ^ onLongPress.hashCode ^ onHover.hashCode;
+    return position.hashCode ^ painter.hashCode ^ hitArea.hashCode ^ rotate.hashCode ^ onTap.hashCode;
   }
 }
