@@ -1,6 +1,7 @@
+import 'dart:async';
 import 'dart:math';
 
-import 'package:flutter/foundation.dart';
+import 'package:example/app_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/flutter_map_markers.dart';
@@ -13,122 +14,197 @@ class MarkerDemoPage extends StatefulWidget {
   State<MarkerDemoPage> createState() => _MarkerDemoPageState();
 }
 
-class _MarkerDemoPageState extends State<MarkerDemoPage> with TickerProviderStateMixin {
-  late final AnimationController _animationController;
+class _MarkerDemoPageState extends State<MarkerDemoPage> {
   List<CanvasMarker> markers = [];
   Marker? hoverCard;
+  double markerCount = 10000;
+  Timer? _debounceTimer;
+
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(vsync: this, duration: const Duration(seconds: 1))..addListener((){
-      setState(() {});
-    });
-    markers = randomCityClusters(2000);
+    // Generate random markers around London
+    markers = randomCityClusters(markerCount.toInt());
   }
 
   @override
-  void dispose() { 
-    _animationController.dispose();
+  void dispose() {
+    _debounceTimer?.cancel();
     super.dispose();
   }
 
-  /// Generate random clusters of markers around a London city center.with given count.
+  /// Generate random clusters of markers around a London city center with given count.
   List<CanvasMarker> randomCityClusters(int count) {
     final random = Random(100);
-    List<CanvasMarker> positions = [];
     final randomGenerator = Random(10);
+    List<CanvasMarker> generatedMarkers = [];
 
+    // Paints
+    // Avoid creating objects that don't change in the loop or markers painter function and reuse them for better performance.
     final Paint borderPaint = Paint()
       ..color = Colors.black
       ..style = PaintingStyle.stroke;
+
+    final Paint circlePaint = Paint()
+      ..color = Colors.black
+      ..style = PaintingStyle.fill;
+
     for (int i = 0; i < count; i++) {
-      final cluster = [51.5074, -0.1278];
+      final london = LatLng(51.5074, -0.1278);
+
+      // Random radial spread from city center
+      double angle = random.nextDouble() * 2 * pi;
+      double distance = random.nextDouble() * 0.5; // Max 2° away
+      double latOffset = distance * sin(angle) * (0.7 + random.nextDouble() * 0.6);
+      double lonOffset = distance * cos(angle) * (0.7 + random.nextDouble() * 0.6);
+      double lat = london.latitude + latOffset;
+      double lon = london.longitude + lonOffset;
+      lat = lat.clamp(-90.0, 90.0);
+      lon = lon.clamp(-180.0, 180.0);
+
+      // This generates a random icon for the marker
+      final iconPainter = TextPainter(textAlign: TextAlign.center, textDirection: TextDirection.ltr);
+      final LatLng pos = LatLng(lat, lon);
+      final markerIcon = Icon(getRandomMarkerIcon(random));
+      iconPainter.text = TextSpan(
+        text: String.fromCharCode(markerIcon.icon!.codePoint),
+        style: TextStyle(fontSize: 15, fontFamily: markerIcon.icon!.fontFamily, color: Colors.white),
+      );
+      // Avoid layout call in the markers painter function for better performance.
+      // Otherwise it would be called every frame during repaint.
+      iconPainter.layout();
+
+      // Random color for the marker fill
       final Color color = Color.fromARGB(255, randomGenerator.nextInt(256), randomGenerator.nextInt(256), randomGenerator.nextInt(256));
       final Paint taskPaint = Paint()
         ..color = color
         ..style = PaintingStyle.fill;
-      // Radial spread from city center
-      double angle = random.nextDouble() * 2 * pi;
-      double distance = random.nextDouble() * 0.5; // Max 2° away
 
-      // Optional: skew toward elliptical pattern (more natural)
-      double latOffset = distance * sin(angle) * (0.7 + random.nextDouble() * 0.6);
-      double lonOffset = distance * cos(angle) * (0.7 + random.nextDouble() * 0.6);
-
-      double lat = cluster[0] + latOffset;
-      double lon = cluster[1] + lonOffset;
-
-      // Clamp to valid range
-      lat = lat.clamp(-90.0, 90.0);
-      lon = lon.clamp(-180.0, 180.0);
-      final textPainter = TextPainter(textAlign: TextAlign.center, textDirection: TextDirection.ltr);
-
-      final LatLng pos = LatLng(lat, lon);
-      final markerIcon = Icon(getRandomMarkerIcon(random));
-      textPainter.text = TextSpan(
-        text: String.fromCharCode(markerIcon.icon!.codePoint),
-        style: TextStyle(fontSize: 23, fontFamily: markerIcon.icon!.fontFamily, color: Colors.white),
-      );
-
-      textPainter.layout();
-
-      final rasterMarker = _generateMarker(pos, cluster, markerIcon, taskPaint, borderPaint, textPainter, i);
-      positions.add(rasterMarker);
+      /// Generates a marker at the given position with the specified styles and behaviors.
+      final marker = _generateMarker(pos, london, markerIcon, taskPaint, borderPaint, circlePaint, iconPainter, i);
+      generatedMarkers.add(marker);
     }
 
-    return positions;
+    return generatedMarkers;
   }
 
   /// Generate a CanvasMarker at the given position with the specified styles and behaviors.
-  CanvasMarker _generateMarker(LatLng pos, List<double> cluster, Icon markerIcon, Paint taskPaint, Paint borderPaint, TextPainter textPainter,int index) {
+  /// Separated into its own method for clarity.
+  CanvasMarker _generateMarker(LatLng pos, LatLng clusterLocation, Icon markerIcon, Paint taskPaint, Paint borderPaint, Paint circlePaint, TextPainter textPainter, int index) {
     return CanvasMarker(
       rotate: true,
       position: pos,
       hitArea: (center, metersToPixels, latLngToPixelOffset, zoomLevel) {
-        final (path, _) = MarkerPresets.ballMarkerPath(center, ballRadius: 15);
+        // Optional: Your hit area can be reactively changed based on zoom level too.
+        // If you change your marker shape in the painter based on zoom level,
+        // you probably want to change the hit area too.
+        if (zoomLevel < 13) {
+          final circlePath = Path()..addOval(Rect.fromCircle(center: center, radius: 5));
+          return circlePath;
+        }
+        // Return the hit area Path for the marker.
+        // This is used for hit testing taps and hovers. It uses path.contains to determine if a point is inside the hit area.
+        // It allows for non-rectangular hit areas.
+        // If it is not provided, a rectangular hit area based on the painter's returned Rect will be used.
+        final (path, _) = MarkerPresets.raindropMarkerPath(center, radius: 12);
         return path;
       },
-      painter: (canvas, center, metersToPixels, latLngToPixelOffset, zoomLevel) { 
-        final (path, markerCenterPosition) = MarkerPresets.ballMarkerPath(center, ballRadius: 15);
-        final bounds = path.getBounds();
-        canvas.drawPath(path, taskPaint);
-
-        canvas.drawPath(path, borderPaint);
-        final Offset clusterOffset = latLngToPixelOffset(LatLng(cluster[0], cluster[1]));
-        canvas.drawLine(center, clusterOffset, borderPaint);
-        if (zoomLevel < 10) {
-          return bounds;
+      painter: (canvas, center, metersToPixels, latLngToPixelOffset, zoomLevel) {
+        // Optional: Your canvas drawing can be reactively changed based on zoom level.
+        // For example, only draw icon details when zoomed in enough.
+        // You could draw different shapes, colors, or sizes or anything else based on zoom level.
+        if (zoomLevel < 13) {
+          canvas.drawCircle(center, 5, taskPaint);
+          canvas.drawCircle(center, 5, borderPaint);
+          return Rect.fromCircle(center: center, radius: 5);
         }
+       
+        // The [center] is provided LatLng position converted to offset.
+        // In other words [center] is the pixel position of the marker on the canvas.
+        // For this example raindrop marker preset is used.
+        // The circular part of the raindrop is centered above the provided position.
+        // And the bottom tip of the raindrop is at the provided [center] position that points to the location.
+        final (path, markerCenterPosition) = MarkerPresets.raindropMarkerPath(center, radius: 12); // Create the raindrop marker path from preset.
+        final bounds = path.getBounds(); // Get the bounds of the path to provide for the hit testing or culling markers outside the view.
+        canvas.drawPath(path, taskPaint); // Draws the filled part of the marker
+        canvas.drawPath(path, borderPaint); // Draws the border of the marker
+
+        // Draw the icon at the center of the circular part of the raindrop.
+        canvas.drawCircle(markerCenterPosition, 10, circlePaint);
         final iconOffset = markerCenterPosition - Offset(textPainter.width / 2, textPainter.height / 2);
         textPainter.paint(canvas, iconOffset);
 
         return bounds;
-      },
-      onHover: (isHovered) {
-        
       },
       onTap: () {
         //Show toast or dialog with info
         showDialog(
           context: context,
           builder: (context) {
-            return AlertDialog(
-              icon: markerIcon,
-              title: Text('Marker Tapped $index'),
-              content: Text('You tapped the marker at (${pos.latitude.toStringAsFixed(4)}, ${pos.longitude.toStringAsFixed(4)})'),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('OK'),
-                ),
-              ],
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              constraints: const BoxConstraints(maxWidth: 220, maxHeight: 300),
+              child: Stack(
+                children: [
+                  InfoCard(title: 'Marker $index', content: markerIcon, index: index),
+                  Positioned(
+                    top: 5,
+                    right: 5,
+                    child: IconButton.filledTonal(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ),
+                ],
+              ),
             );
           },
         );
       },
+      // onHover: (isHovering) {
+      //   setState(() {
+      //     if (isHovering) {
+      //       hoverCard = Marker(
+      //         alignment: Alignment.bottomCenter,
+      //         point: pos,
+      //         width: 200,
+      //         height: 250,
+      //         child: InfoCard(title: 'Marker $index', content: markerIcon, index: index),
+      //       );
+      //     } else {
+      //       hoverCard = null;
+      //     }
+      //   });
+      // },
     );
+  }
+
+  // Regenerate markers with new count
+  void _regenerateMarkers(double newCount) {
+    setState(() {
+      markerCount = newCount;
+      markers = randomCityClusters(markerCount.toInt());
+    });
+  }
+
+  // Debounced version for slider changes
+  void _debouncedRegenerateMarkers(double newCount) {
+    // Cancel the previous timer if it exists
+    _debounceTimer?.cancel();
+
+    // Update the marker count immediately for UI responsiveness
+    setState(() {
+      markerCount = newCount;
+    });
+
+    // Set a new timer to regenerate markers after delay
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      setState(() {
+        markers = randomCityClusters(markerCount.toInt());
+      });
+    });
   }
 
   // Get a random icon for the marker
@@ -158,6 +234,7 @@ class _MarkerDemoPageState extends State<MarkerDemoPage> with TickerProviderStat
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(title: const Text('Marker Demo Page')),
       body: Stack(
         children: [
@@ -165,40 +242,63 @@ class _MarkerDemoPageState extends State<MarkerDemoPage> with TickerProviderStat
             options: MapOptions(initialCenter: LatLng(51.5074, -0.1278), initialZoom: 5, maxZoom: 18, minZoom: 3),
             children: [
               TileLayer(userAgentPackageName: 'com.flutter_map_markers.example', urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
-              CanvasMarkerLayer(markers: markers, showDebugHitArea: false, showDebugRect: false, drawHitMarkerLast: true),
+              CanvasMarkerLayer(markers: markers),
               MarkerLayer(markers: hoverCard != null ? [hoverCard!] : []),
             ],
           ),
-          if (!kIsWeb && true) Positioned(bottom: 16, left: 0, right: 0, child: PerformanceOverlay.allEnabled()),
+          Positioned(
+            top: 16,
+            left: 16,
+            right: 16,
+            child: Card(
+              color: Colors.white.withOpacity(0.9),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Markers: ${markerCount.toInt()}', style: Theme.of(context).textTheme.titleMedium),
+                    Slider(value: markerCount, min: 100, max: 20000, divisions: 199, label: markerCount.toInt().toString(), onChanged: _debouncedRegenerateMarkers),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // if (!kIsWeb && true) Positioned(bottom: 16, left: 0, right: 0, child: PerformanceOverlay.allEnabled()),
         ],
       ),
     );
   }
 }
 
-class HoverCard extends StatelessWidget {
+class InfoCard extends StatelessWidget {
   final String title;
   final Icon content;
+  final int index;
 
-  const HoverCard({super.key, required this.title, required this.content});
+  const InfoCard({super.key, required this.title, required this.content, required this.index});
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: 200,
-      height: 50,
+      height: 250,
       child: Card(
+        clipBehavior: Clip.antiAlias,
         color: Colors.white70,
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              content,
-              const SizedBox(width: 8),
-              Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            ],
-          ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Image.network('https://picsum.photos/seed/${index}/200', fit: BoxFit.cover, height: 200),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                content,
+                const SizedBox(width: 8),
+                Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ],
         ),
       ),
     );
