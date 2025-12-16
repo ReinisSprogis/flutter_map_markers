@@ -14,7 +14,7 @@
 <h2>Features</h2>
 
 <ul>
-  <li><strong>Interactive Markers</strong> - Support for tap, double-tap, long-press, and hover gestures</li>
+  <li><strong>Interactive Markers</strong> - Support for tap</li>
   <li><strong>Custom Hit Detection</strong> - Define custom hit areas for complex marker shapes</li>
   <li><strong>Marker Rotation</strong> - Counter-rotate markers to maintain orientation during map rotation</li>
   <li><strong>Culling</strong> - Automatically cull markers outside the visible viewport</li>
@@ -126,12 +126,6 @@ CanvasMarker(
   onTap: () {
     print('Marker tapped!');
   },
-  onHover: (isHovered) {
-    print('Marker hover: $isHovered');
-  },
-  onLongPress: () {
-    print('Marker long pressed!');
-  },
 )
 ```
 
@@ -161,6 +155,23 @@ CanvasMarker(
 <h3>Advanced: Drawing with Icons and Text</h3>
 
 ```dart
+final textPainter = TextPainter(
+  textAlign: TextAlign.center,
+  textDirection: TextDirection.ltr,
+);
+
+final icon = Icons.place;
+textPainter.text = TextSpan(
+  text: String.fromCharCode(icon.codePoint),
+  style: TextStyle(
+    fontSize: 20,
+    fontFamily: icon.fontFamily,
+    color: Colors.white,
+  ),
+);
+
+textPainter.layout();
+
 CanvasMarker(
   position: LatLng(51.5074, -0.1278),
   painter: (canvas, center, metersToPixels, latLngToPixelOffset, zoomLevel) {
@@ -170,28 +181,11 @@ CanvasMarker(
     canvas.drawPath(path, bgPaint);
     
     // Draw icon
-    final textPainter = TextPainter(
-      textAlign: TextAlign.center,
-      textDirection: TextDirection.ltr,
-    );
-    
-    final icon = Icons.place;
-    textPainter.text = TextSpan(
-      text: String.fromCharCode(icon.codePoint),
-      style: TextStyle(
-        fontSize: 20,
-        fontFamily: icon.fontFamily,
-        color: Colors.white,
-      ),
-    );
-    
-    textPainter.layout();
     final iconOffset = iconCenter - Offset(
       textPainter.width / 2,
       textPainter.height / 2,
     );
     textPainter.paint(canvas, iconOffset);
-    
     return path.getBounds();
   },
 )
