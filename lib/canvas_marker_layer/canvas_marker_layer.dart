@@ -25,7 +25,7 @@ class CanvasMarkerLayer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final camera = MapCamera.of(context);
-    return CanvasMarkerRenderLayer(markers: markers, camera: camera, showDebugRect: showDebugRect, showDebugHitArea: showDebugHitArea, drawHitMarkerLast: drawHitMarkerLast, cullMarkers: cullMarkers);
+    return MobileLayerTransformer(child: CanvasMarkerRenderLayer(markers: markers, camera: camera, showDebugRect: showDebugRect, showDebugHitArea: showDebugHitArea, drawHitMarkerLast: drawHitMarkerLast, cullMarkers: cullMarkers));
   }
 }
 
