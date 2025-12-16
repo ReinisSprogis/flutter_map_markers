@@ -163,21 +163,6 @@ class _MarkerDemoPageState extends State<MarkerDemoPage> {
           },
         );
       },
-      // onHover: (isHovering) {
-      //   setState(() {
-      //     if (isHovering) {
-      //       hoverCard = Marker(
-      //         alignment: Alignment.bottomCenter,
-      //         point: pos,
-      //         width: 200,
-      //         height: 250,
-      //         child: InfoCard(title: 'Marker $index', content: markerIcon, index: index),
-      //       );
-      //     } else {
-      //       hoverCard = null;
-      //     }
-      //   });
-      // },
     );
   }
 

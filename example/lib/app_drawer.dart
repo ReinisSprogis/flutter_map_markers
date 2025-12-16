@@ -1,6 +1,6 @@
-import 'package:example/marker_demo_page.dart';
-import 'package:example/marker_demo_simple.dart';
-import 'package:example/pricetag_marker_demo.dart';
+import 'package:example/demo_pages/marker_demo_page.dart';
+import 'package:example/demo_pages/marker_demo_simple.dart';
+import 'package:example/demo_pages/pricetag_marker_demo.dart';
 import 'package:flutter/material.dart';
 
 class AppDrawer extends StatelessWidget {

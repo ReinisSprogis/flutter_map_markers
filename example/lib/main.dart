@@ -1,4 +1,4 @@
-import 'package:example/marker_demo_page.dart';
+import 'package:example/demo_pages/marker_demo_page.dart';
 import 'package:flutter/material.dart';
 
 void main() {
