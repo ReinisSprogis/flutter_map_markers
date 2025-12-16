@@ -22,6 +22,55 @@ class RenderCanvasMarkerLayer extends RenderBox {
   bool _cullMarkers;
   bool _drawHitMarkerLast;
 
+  // Tap tracking to ensure marker taps only fire for true taps, not for
+  // panning/zooming/rotating gestures that started on top of a marker.
+  final Set<int> _activePointers = <int>{};
+  int? _tapCandidatePointer;
+  int? _tapCandidateMarkerIndex;
+  bool _tapCandidateHadMultiTouch = false;
+
+  late final TapGestureRecognizer _tapGestureRecognizer = TapGestureRecognizer(debugOwner: this)
+    ..onTapUp = (details) {
+      final markerIndex = _tapCandidateMarkerIndex;
+      if (markerIndex == null) return;
+      if (_tapCandidateHadMultiTouch) {
+        _clearTapCandidate();
+        return;
+      }
+
+      final localPosition = globalToLocal(details.globalPosition);
+      final upIndex = hitTestMarkers(localPosition);
+      if (upIndex != markerIndex) {
+        _clearTapCandidate();
+        return;
+      }
+
+      final marker = markers[markerIndex];
+      marker.onTap?.call();
+
+      if (drawHitMarkerLast) {
+        _lastSelectedMarkerIndex = markerIndex;
+        markNeedsPaint();
+      }
+
+      _clearTapCandidate();
+    }
+    ..onTapCancel = () {
+      _clearTapCandidate();
+    };
+
+  void _clearTapCandidate() {
+    _tapCandidatePointer = null;
+    _tapCandidateMarkerIndex = null;
+    _tapCandidateHadMultiTouch = false;
+  }
+
+  @override
+  void dispose() {
+    _tapGestureRecognizer.dispose();
+    super.dispose();
+  }
+
   RenderCanvasMarkerLayer({
     required List<CanvasMarker> markers,
     required MapCamera camera,
@@ -210,29 +259,60 @@ class RenderCanvasMarkerLayer extends RenderBox {
 
   @override
   void handleEvent(PointerEvent event, covariant BoxHitTestEntry entry) {
-    if (event is PointerDownEvent) {
-      final index = hitTestMarkers(entry.localPosition);
+    // Desktop trackpad pan/zoom (and some platforms) emit pan-zoom events.
+    // These should never trigger marker taps.
+    if (event is PointerPanZoomStartEvent || event is PointerPanZoomUpdateEvent || event is PointerPanZoomEndEvent) {
+      _clearTapCandidate();
+      return;
+    }
 
+    if (event is PointerDownEvent) {
+      _activePointers.add(event.pointer);
+
+      // If a second pointer goes down while we're tracking a candidate, we
+      // never want to treat this sequence as a marker tap.
+      if (_activePointers.length > 1) {
+        _tapCandidateHadMultiTouch = true;
+      }
+
+      final index = hitTestMarkers(entry.localPosition);
       if (index == null || index < 0 || index >= markers.length) {
         return;
       }
 
-      final marker = markers[index];
-      marker.onTap?.call();
-
-      if (drawHitMarkerLast) {
-        _lastSelectedMarkerIndex = index;
-        markNeedsPaint();
+      // Only start a tap recognizer for the first pointer. If multi-touch
+      // happens later (pinch/rotate), the recognizer will be cancelled by the
+      // arena and we additionally guard via `_tapCandidateHadMultiTouch`.
+      if (_activePointers.length != 1) {
+        _tapCandidateHadMultiTouch = true;
+        return;
       }
 
-      // Cancel the pointer so ancestor FlutterMap gesture detectors stop
-      // tracking this sequence once a marker consumed it.
-      GestureBinding.instance.cancelPointer(event.pointer);
+      _tapCandidatePointer = event.pointer;
+      _tapCandidateMarkerIndex = index;
+      _tapCandidateHadMultiTouch = false;
+
+      // Participate in the gesture arena. This prevents FlutterMap's onTap from
+      // firing when the marker tap wins, but will naturally lose to pan/scale.
+      _tapGestureRecognizer.addPointer(event);
       return;
     }
 
-    if (event is PointerUpEvent || event is PointerCancelEvent) {
-      // No-op for now
+    if (event is PointerMoveEvent) {
+      // No-op: TapGestureRecognizer handles movement and cancellation.
+      return;
+    }
+
+    if (event is PointerUpEvent) {
+      _activePointers.remove(event.pointer);
+      return;
+    }
+
+    if (event is PointerCancelEvent) {
+      _activePointers.remove(event.pointer);
+      if (_tapCandidatePointer == event.pointer) {
+        _clearTapCandidate();
+      }
       return;
     }
   }
