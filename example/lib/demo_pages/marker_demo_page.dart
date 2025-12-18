@@ -2,11 +2,13 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:example/app_drawer.dart';
+import 'package:example/utility/utility.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/flutter_map_markers.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 
+/// Demonstration of a large number of markers with random icons and clustering around London.
 class MarkerDemoPage extends StatefulWidget {
   const MarkerDemoPage({super.key});
 
@@ -16,8 +18,7 @@ class MarkerDemoPage extends StatefulWidget {
 
 class _MarkerDemoPageState extends State<MarkerDemoPage> {
   List<CanvasMarker> markers = [];
-  Marker? hoverCard;
-  double markerCount = 10000;
+  double markerCount = 2000;
   Timer? _debounceTimer;
 
   @override
@@ -52,19 +53,11 @@ class _MarkerDemoPageState extends State<MarkerDemoPage> {
     for (int i = 0; i < count; i++) {
       final london = LatLng(51.5074, -0.1278);
 
-      // Random radial spread from city center
-      double angle = random.nextDouble() * 2 * pi;
-      double distance = random.nextDouble() * 0.5; // Max 2° away
-      double latOffset = distance * sin(angle) * (0.7 + random.nextDouble() * 0.6);
-      double lonOffset = distance * cos(angle) * (0.7 + random.nextDouble() * 0.6);
-      double lat = london.latitude + latOffset;
-      double lon = london.longitude + lonOffset;
-      lat = lat.clamp(-90.0, 90.0);
-      lon = lon.clamp(-180.0, 180.0);
-
       // This generates a random icon for the marker
       final iconPainter = TextPainter(textAlign: TextAlign.center, textDirection: TextDirection.ltr);
-      final LatLng pos = LatLng(lat, lon);
+      // Random position around London with clustering
+      final LatLng pos = Utility.clusterPoint(london, random);
+      // Get a random icon for the marker
       final markerIcon = Icon(getRandomMarkerIcon(random));
       iconPainter.text = TextSpan(
         text: String.fromCharCode(markerIcon.icon!.codePoint),
@@ -166,14 +159,6 @@ class _MarkerDemoPageState extends State<MarkerDemoPage> {
     );
   }
 
-  // Regenerate markers with new count
-  void _regenerateMarkers(double newCount) {
-    setState(() {
-      markerCount = newCount;
-      markers = randomCityClusters(markerCount.toInt());
-    });
-  }
-
   // Debounced version for slider changes
   void _debouncedRegenerateMarkers(double newCount) {
     // Cancel the previous timer if it exists
@@ -224,11 +209,10 @@ class _MarkerDemoPageState extends State<MarkerDemoPage> {
       body: Stack(
         children: [
           FlutterMap(
-            options: MapOptions(initialCenter: LatLng(51.5074, -0.1278), initialZoom: 5, maxZoom: 18, minZoom: 3),
+            options: MapOptions(initialCenter: LatLng(51.5074, -0.1278), initialZoom: 10, maxZoom: 18, minZoom: 3),
             children: [
               TileLayer(userAgentPackageName: 'com.flutter_map_markers.example', urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
               CanvasMarkerLayer(markers: markers),
-              MarkerLayer(markers: hoverCard != null ? [hoverCard!] : []),
             ],
           ),
           Positioned(
@@ -236,7 +220,7 @@ class _MarkerDemoPageState extends State<MarkerDemoPage> {
             left: 16,
             right: 16,
             child: Card(
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withAlpha(230),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
