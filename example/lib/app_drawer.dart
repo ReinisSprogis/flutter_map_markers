@@ -1,4 +1,5 @@
 import 'package:example/demo_pages/animated_marker_demo_page.dart';
+import 'package:example/demo_pages/lat_long_to_offset_demo_page.dart';
 import 'package:example/demo_pages/marker_demo_page.dart';
 import 'package:example/demo_pages/meters_to_pixels_demo_page.dart';
 import 'package:example/demo_pages/simple_marker_demo_page.dart';
@@ -22,7 +23,7 @@ class AppDrawer extends StatelessWidget {
             leading: const Icon(Icons.map),
             title: const Text('Marker Demo'),
             onTap: () {
-              Navigator.pop(context); // Close the drawer
+              Navigator.pop(context);
               Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const MarkerDemoPage()));
             },
           ),
@@ -30,7 +31,7 @@ class AppDrawer extends StatelessWidget {
             leading: const Icon(Icons.pin_drop),
             title: const Text('Simple Marker'),
             onTap: () {
-              Navigator.pop(context); // Close the drawer
+              Navigator.pop(context);
               Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const SimpleMarkerDemoPage()));
             },
           ),
@@ -38,7 +39,7 @@ class AppDrawer extends StatelessWidget {
             leading: const Icon(Icons.price_check),
             title: const Text('Price Tag Marker'),
             onTap: () {
-              Navigator.pop(context); // Close the drawer
+              Navigator.pop(context);
               Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const PriceTagMarkerDemo()));
             },
           ),
@@ -46,7 +47,7 @@ class AppDrawer extends StatelessWidget {
             leading: const Icon(Icons.animation),
             title: const Text('Animated Marker'),
             onTap: () {
-              Navigator.pop(context); // Close the drawer
+              Navigator.pop(context);
               Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const AnimatedMarkerDemoPage()));
             },
           ),
@@ -54,8 +55,16 @@ class AppDrawer extends StatelessWidget {
             leading: const Icon(Icons.straighten),
             title: const Text('Meters to pixels'),
             onTap: () {
-              Navigator.pop(context); // Close the drawer
+              Navigator.pop(context);
               Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const MetersToPixelsDemoPage()));
+            },
+          ),
+           ListTile(
+            leading: const Icon(Icons.straighten),
+            title: const Text('LatLng to Offset'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const LatLongToOffsetDemoPage()));
             },
           ),
         ],
