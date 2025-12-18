@@ -5,7 +5,7 @@ typedef CanvasPainter =
     Rect Function(
       Canvas canvas,
       Offset center,
-      double Function(double meters, double latitude) metersToPixels,
+      double Function(double meters, coord.LatLng position) metersToPixels,
       Offset Function(coord.LatLng latLng, {coord.LatLng? referencePoint}) latLngToPixelOffset,
       int zoomLevel,
     );
@@ -13,7 +13,7 @@ typedef CanvasPainter =
 typedef HitArea =
     Path Function(
       Offset center,
-      double Function(double meters, double latitude) metersToPixels,
+      double Function(double meters, coord.LatLng position) metersToPixels,
       Offset Function(coord.LatLng latLng, {coord.LatLng? referencePoint}) latLngToPixelOffset,
       int zoomLevel,
     );
@@ -41,7 +41,7 @@ class CanvasMarker {
   /// The [hitArea] function provides several parameters:
   /// /// - [center]: The central pixel position of the marker. This is typically the anchor point for rendering shapes (e.g., the center of a circle).
   /// - [metersToPixels]: A function that converts a size in meters to pixels, based
-  ///  on the current zoom level and latitude of the [position]. This must also be used when computing the returned [Rect].
+  ///  on the current zoom level and [position].
   /// - [latLngToPixelOffset]: A function that converts geographic coordinates (LatLng)
   /// to pixel offsets. Useful for drawing lines or shapes between coordinates.
   /// - [zoomLevel]: The current zoom level, which can be used to scale graphics based on the zoom level.
@@ -60,7 +60,7 @@ class CanvasMarker {
   ///
   /// - [canvas]: The [Canvas] instance used to draw the marker.
   /// - [center]: The central pixel position of the marker. This is typically the anchor point for rendering shapes (e.g., the center of a circle).
-  /// - [metersToPixels]: A function that converts a size in meters to pixels, based on the current zoom level and latitude of the [position]. This must also be used when computing the returned [Rect].
+  /// - [metersToPixels]: A function that converts a size in meters to pixels, based on the current zoom level and latitude of the [position].
   /// - [latLngToPixelOffset]: A function that converts geographic coordinates (LatLng) to pixel offsets. Useful for drawing lines or shapes between coordinates.
   /// - [zoomLevel]: The current zoom level, which can be used to scale graphics based on the zoom level.
   ///
@@ -71,7 +71,7 @@ class CanvasMarker {
   bool rotate;
 
   /// Callback function that is called when the marker is tapped.
-  final Function? onTap;
+  Function? onTap;
 
   CanvasMarker({required this.position, required this.painter, this.hitArea, this.rotate = false, this.onTap,});
 
