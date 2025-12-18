@@ -6,6 +6,8 @@ import 'package:flutter_map_markers/canvas_marker_layer/canvas_marker_layer.dart
 import 'package:flutter_map_markers/marker_presets/marker_presets.dart';
 import 'package:latlong2/latlong.dart';
 
+/// Demonstration of simple markers that can be added by tapping on the map.
+/// Tapping on a marker shows a SnackBar with its coordinates.
 class SimpleMarkerDemoPage extends StatefulWidget {
   const SimpleMarkerDemoPage({super.key});
 
@@ -24,7 +26,15 @@ class _SimpleMarkerDemoPageState extends State<SimpleMarkerDemoPage> {
   }
 
   CanvasMarker _createMarker(LatLng position) {
-    return MarkerPresets.raindropMarker( position: position, radius: 12);
+    return MarkerPresets.raindropMarker( position: position, radius: 12,
+     onTap: (){
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Marker at (${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}) tapped!'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+     });
   }
 
   @override
