@@ -1,11 +1,10 @@
-import 'dart:math';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/canvas_marker_layer/canvas_marker.dart';
 import 'package:flutter_map_markers/util/no_op_canvas.dart';
-import 'package:flutter_map_markers/util/utility.dart';
+import 'package:latlong2/latlong.dart' hide Path;
 import 'package:vector_math/vector_math_64.dart' hide Colors;
 
 /// A render object that draws [CanvasMarker]s and performs marker hit testing.
@@ -73,6 +72,20 @@ class RenderCanvasMarkerLayer extends RenderBox {
   /// additionally guard against platform differences and unusual sequences
   /// where multi-touch may not cancel the recognizer the way we expect.
   bool _tapCandidateHadMultiTouch = false;
+
+  /// Converts a distance in meters to screen pixels at the given [point].
+double _metersToPixels(
+  LatLng point,
+  double meters,
+) {
+  final south = const Distance().offset(point, meters, 180);
+
+  final p1 = camera.getOffsetFromOrigin(point);
+  final p2 = camera.getOffsetFromOrigin(south);
+
+  return (p1 - p2).distance;
+}
+
 
   /// Recognizes taps for markers.
   ///
@@ -201,9 +214,6 @@ class RenderCanvasMarkerLayer extends RenderBox {
     return constraints.biggest;
   }
 
-  double _metersToPixels(double meters, double latitude, double zoom) {
-    return Utility.metersToPixels(meters, latitude, zoom);
-  }
 
   @override
   bool hitTestSelf(Offset position) => true;
@@ -276,7 +286,7 @@ class RenderCanvasMarkerLayer extends RenderBox {
     final rect = marker.painter(
       canvas,
       screenOffset,
-      (meters, latitude) => _metersToPixels(meters, latitude, camera.zoom),
+      (meters, latLong) => _metersToPixels(latLong, meters),
       (latLng, {referencePoint}) => camera.getOffsetFromOrigin(latLng),
       camera.zoom.ceil(),
     );
@@ -293,7 +303,7 @@ class RenderCanvasMarkerLayer extends RenderBox {
     if (paintDebugHitArea && marker.hitArea != null) {
       final hitPath = marker.hitArea!(
         screenOffset,
-        (meters, lat) => _metersToPixels(meters, lat, camera.zoom),
+        (meters, latLong) => _metersToPixels(latLong, meters),
         (ll, {referencePoint}) => camera.getOffsetFromOrigin(ll),
         camera.zoom.ceil(),
       );
@@ -461,7 +471,7 @@ class RenderCanvasMarkerLayer extends RenderBox {
     if (marker.hitArea != null) {
       Path hitPath = marker.hitArea!(
         markerScreenOffset,
-        (meters, lat) => Utility.metersToPixels(meters, marker.position.latitude, zoom),
+        (meters, latLong) => _metersToPixels(latLong, meters),
         (ll, {referencePoint}) => camera.getOffsetFromOrigin(ll),
         zoom.ceil(),
       );
@@ -477,7 +487,7 @@ class RenderCanvasMarkerLayer extends RenderBox {
       final Rect bounds = marker.painter(
         NoOpCanvas(),
         markerScreenOffset,
-        (meters, lat) => Utility.metersToPixels(meters, marker.position.latitude, zoom),
+        (meters, latLong) => _metersToPixels(latLong, meters),
         (ll, {referencePoint}) => camera.getOffsetFromOrigin(ll),
         zoom.ceil(),
       );
