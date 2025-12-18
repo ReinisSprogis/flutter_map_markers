@@ -40,7 +40,9 @@ class _BallMarkerDemoPageState extends State<BallMarkerDemoPage> {
       ..style = PaintingStyle.fill
       ..color = Colors.white;
 
-    return CanvasMarker(position: position, 
+    return CanvasMarker(
+      rotate: true,
+      position: position, 
     hitArea: (center, metersToPixels, latLngToPixelOffset, zoomLevel) {
       final (markerPath, _) = MarkerPresets.ballMarkerPath(center);
       return markerPath;
