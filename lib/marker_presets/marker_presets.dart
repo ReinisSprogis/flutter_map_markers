@@ -1,5 +1,8 @@
 import 'dart:math';
-import 'dart:ui';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_map_markers/canvas_marker_layer/canvas_marker.dart';
+import 'package:latlong2/latlong.dart' hide Path;
 
 class MarkerPresets {
   ///Returns a ball shaped Path and the center of the ball.
@@ -48,6 +51,9 @@ class MarkerPresets {
   }
 
   ///Returns a raindrop shaped Path and the center of the circular part of the raindrop.
+  /// The bottom of the raindrop is at the provided [bottom] Offset.
+  /// [radius] defines the radius of the circular part of the raindrop.
+  /// The center of the circular part is located 2 * radius above the bottom point.
   static (Path path, Offset center) raindropMarkerPath(Offset bottom, {double radius = 20}) {
     // Circle center is 2 radius above the final bottom anchor.
     final cx = bottom.dx;
@@ -69,10 +75,10 @@ class MarkerPresets {
     final cTR2 = Offset(cx + radius, cy - k);
 
     final cRB1 = Offset(cx + radius, cy + k);
-    final cRB2 = Offset(cx + k, cy + radius - (radius / 3)); 
+    final cRB2 = Offset(cx + k, cy + radius - (radius / 2));
     // Moving control points inward by radius/3 for concave effect of the raindrop.
     // You can adjust this value for more or less pronounced effect.
-    final cBL1 = Offset(cx - k, cy + radius - (radius / 3));
+    final cBL1 = Offset(cx - k, cy + radius - (radius / 2));
     final cBL2 = Offset(cx - radius, cy + k);
 
     final cLT1 = Offset(cx - radius, cy - k);
@@ -95,5 +101,161 @@ class MarkerPresets {
     path.close();
 
     return (path, Offset(cx, cy));
+  }
+
+  ///Generates a raindrop marker at the given position.
+  ///
+  /// [position]: The geographical position of the marker.
+  ///
+  /// [radius]: The radius of the circular part of the raindrop.
+  ///
+  /// [fillColor]: The fill color of the raindrop.
+  ///
+  /// [borderColor]: The border color of the raindrop.
+  ///
+  /// [circleColor]: The color of the circle inside the raindrop.
+  ///
+  /// [onTap]: Optional callback function to be executed when the marker is tapped.
+  ///
+  /// [rotate]: Whether the marker should counter-rotate the map.
+  static CanvasMarker raindropMarker({
+    required LatLng position,
+    double radius = 12.0,
+    Color fillColor = const Color(0xfff1493c),
+    Color borderColor = const Color(0xff81342d),
+    Color circleColor = const Color(0xff81342d),
+    VoidCallback? onTap,
+    bool rotate = true,
+  }) {
+    final Paint borderPaint = Paint()
+      ..color = borderColor
+      ..strokeJoin = StrokeJoin.round
+      ..style = PaintingStyle.stroke;
+
+    final Paint circlePaint = Paint()
+      ..color = circleColor
+      ..style = PaintingStyle.fill;
+
+    final Paint fillPaint = Paint()
+      ..strokeJoin = StrokeJoin.round
+      ..color = fillColor
+      ..style = PaintingStyle.fill;
+
+    return CanvasMarker(
+      rotate: rotate,
+      position: position,
+      hitArea: (center, metersToPixels, latLngToPixelOffset, zoomLevel) {
+        final (path, _) = MarkerPresets.raindropMarkerPath(center, radius: radius);
+        return path;
+      },
+      painter: (canvas, center, metersToPixels, latLngToPixelOffset, zoomLevel) {
+        final (path, markerCenterPosition) = MarkerPresets.raindropMarkerPath(center, radius: radius);
+        canvas.drawPath(path, fillPaint);
+        canvas.drawPath(path, borderPaint);
+        canvas.drawCircle(markerCenterPosition, radius / 2, circlePaint);
+        final bounds = Rect.fromLTRB(center.dx - radius, center.dy - radius * 3, center.dx + radius, center.dy);
+        return bounds;
+      },
+      onTap: onTap,
+    );
+  }
+
+  /// Generates a text marker at the given position.
+  ///
+  /// [position]: The geographical position of the marker.
+  ///
+  /// [text]: The text to display inside the marker.
+  ///
+  /// [fillColor]: The fill color of the marker.
+  ///
+  /// [borderColor]: The border color of the marker.
+  ///
+  /// [textColor]: The color of the text.
+  ///
+  /// [onTap]: Optional callback function to be executed when the marker is tapped.
+  ///
+  /// [rotate]: Whether the marker should counter-rotate the map.
+  ///
+  /// [zoomLevelTransition]: Optional zoom level threshold to switch to a simpler representation (circle) below the specified zoom level.
+  static CanvasMarker textMarker({
+    required LatLng position,
+    required String text,
+    Color fillColor = Colors.white,
+    Color borderColor = Colors.deepPurple,
+    Color textColor = Colors.black,
+    VoidCallback? onTap,
+    bool rotate = true,
+    int? zoomLevelTransition,
+  }) {
+    final textPainter = TextPainter(textAlign: TextAlign.center, textDirection: TextDirection.ltr);
+    textPainter.text = TextSpan(
+      text: text,
+      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor),
+    );
+    textPainter.layout();
+
+    final Paint borderPaint = Paint()
+      ..color = borderColor
+      ..strokeJoin = StrokeJoin.round
+      ..style = PaintingStyle.stroke;
+
+    final Paint fillPaint = Paint()
+      ..color = fillColor
+      ..style = PaintingStyle.fill;
+
+    final double width = textPainter.width + 8;
+    final double height = textPainter.height + 8;
+    final double cornerRadius = 4;
+
+    Path createMarkerPath(Offset center, double width, double height, double cornerRadius) {
+      Path markerPath = Path();
+      markerPath.moveTo(center.dx, center.dy);
+      markerPath.lineTo(center.dx - 2.5, center.dy - 5);
+      markerPath.lineTo(center.dx - width / 2 + cornerRadius, center.dy - 5);
+      markerPath.arcToPoint(Offset(center.dx - width / 2, center.dy - 5 - cornerRadius), radius: Radius.circular(cornerRadius), clockwise: true);
+      markerPath.lineTo(center.dx - width / 2, center.dy - height + cornerRadius);
+      markerPath.arcToPoint(Offset(center.dx - width / 2 + cornerRadius, center.dy - height), radius: Radius.circular(cornerRadius), clockwise: true);
+      markerPath.lineTo(center.dx + width / 2 - cornerRadius, center.dy - height);
+      markerPath.arcToPoint(Offset(center.dx + width / 2, center.dy - height + cornerRadius), radius: Radius.circular(cornerRadius), clockwise: true);
+      markerPath.lineTo(center.dx + width / 2, center.dy - 5 - cornerRadius);
+      markerPath.arcToPoint(Offset(center.dx + width / 2 - cornerRadius, center.dy - 5), radius: Radius.circular(cornerRadius), clockwise: true);
+      markerPath.lineTo(center.dx + 2.5, center.dy - 5);
+      markerPath.close();
+      return markerPath;
+    }
+
+    return CanvasMarker(
+      rotate: true,
+      position: position,
+      hitArea: onTap != null
+          ? (center, metersToPixels, latLngToPixelOffset, zoomLevel) {
+              // Return a simple circle hit area below the zoom level transition
+              if (zoomLevelTransition != null && zoomLevel < zoomLevelTransition) {
+                return Path()..addOval(Rect.fromCircle(center: center, radius: 5));
+              }
+              // Return the full marker path otherwise
+              Path markerPath = createMarkerPath(center, width, height, cornerRadius);
+              return markerPath;
+            }
+          : null,
+      painter: (canvas, center, metersToPixels, latLngToPixelOffset, zoomLevel) {
+        // Draw a simple circle below the zoom level transition
+        if (zoomLevelTransition != null && zoomLevel < zoomLevelTransition) {
+          canvas.drawCircle(center, 5, fillPaint);
+          canvas.drawCircle(center, 5, borderPaint);
+          return Rect.fromCircle(center: center, radius: 5);
+        }
+        // Draw the full marker otherwise
+        Path markerPath = createMarkerPath(center, width, height, cornerRadius);
+        canvas.drawPath(markerPath, fillPaint);
+        canvas.drawPath(markerPath, borderPaint);
+
+        final textOffset = center - Offset(textPainter.width / 2, (height + 5) / 2 + textPainter.height / 2);
+        textPainter.paint(canvas, textOffset);
+        final bounds = Rect.fromLTRB(center.dx - width / 2, center.dy - height, center.dx + width / 2, center.dy);
+        return bounds;
+      },
+      onTap: onTap,
+    );
   }
 }
