@@ -1,4 +1,5 @@
 import 'package:example/demo_pages/animated_marker_demo_page.dart';
+import 'package:example/demo_pages/ball_marker_demo_page.dart';
 import 'package:example/demo_pages/lat_long_to_offset_demo_page.dart';
 import 'package:example/demo_pages/marker_demo_page.dart';
 import 'package:example/demo_pages/meters_to_pixels_demo_page.dart';
@@ -65,6 +66,15 @@ class AppDrawer extends StatelessWidget {
             onTap: () {
               Navigator.pop(context);
               Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const LatLongToOffsetDemoPage()));
+            },
+          ),
+
+           ListTile(
+            leading: const Icon(Icons.bubble_chart),
+            title: const Text('Ball Marker'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const BallMarkerDemoPage()));
             },
           ),
         ],
