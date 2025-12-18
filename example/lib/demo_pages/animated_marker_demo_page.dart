@@ -6,6 +6,11 @@ import 'package:flutter_map_markers/canvas_marker_layer/canvas_marker_layer.dart
 import 'package:flutter_map_markers/marker_presets/marker_presets.dart';
 import 'package:latlong2/latlong.dart';
 
+/// Demonstration of simple markers that can be added by tapping on the map.
+/// Tapping on a marker shows a SnackBar with its coordinates.
+/// The marker size animates from small to normal size when added.
+/// I want to make animations to be more easily done in the future versions of the package.
+/// So this is just a demo of how it can be done currently.
 class AnimatedMarkerDemoPage extends StatefulWidget {
   const AnimatedMarkerDemoPage({super.key});
 
