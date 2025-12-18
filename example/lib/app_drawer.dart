@@ -1,5 +1,7 @@
+import 'package:example/demo_pages/animated_marker_demo_page.dart';
 import 'package:example/demo_pages/marker_demo_page.dart';
-import 'package:example/demo_pages/marker_demo_simple.dart';
+import 'package:example/demo_pages/meters_to_pixels_demo_page.dart';
+import 'package:example/demo_pages/simple_marker_demo_page.dart';
 import 'package:example/demo_pages/pricetag_marker_demo.dart';
 import 'package:flutter/material.dart';
 
@@ -18,7 +20,7 @@ class AppDrawer extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.map),
-            title: const Text('Marker Demo Page'),
+            title: const Text('Marker Demo'),
             onTap: () {
               Navigator.pop(context); // Close the drawer
               Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const MarkerDemoPage()));
@@ -26,18 +28,34 @@ class AppDrawer extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.pin_drop),
-            title: const Text('Marker Demo Simple'),
+            title: const Text('Simple Marker'),
             onTap: () {
               Navigator.pop(context); // Close the drawer
-              Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const MarkerDemoSimple()));
+              Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const SimpleMarkerDemoPage()));
             },
           ),
            ListTile(
-            leading: const Icon(Icons.pin_drop),
-            title: const Text('Price Tag Marker Demo'),
+            leading: const Icon(Icons.price_check),
+            title: const Text('Price Tag Marker'),
             onTap: () {
               Navigator.pop(context); // Close the drawer
               Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const PriceTagMarkerDemo()));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.animation),
+            title: const Text('Animated Marker'),
+            onTap: () {
+              Navigator.pop(context); // Close the drawer
+              Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const AnimatedMarkerDemoPage()));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.straighten),
+            title: const Text('Meters to pixels'),
+            onTap: () {
+              Navigator.pop(context); // Close the drawer
+              Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const MetersToPixelsDemoPage()));
             },
           ),
         ],
