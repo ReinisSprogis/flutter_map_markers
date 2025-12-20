@@ -110,8 +110,6 @@ class _LatLongToOffsetDemoPageState extends State<LatLongToOffsetDemoPage> {
 
         // Draw arrowhead at the end of the line (at the target position)
         _drawArrowhead(canvas, center, offsetPosition, linePaint, backgroundLinePaint);
-
-        return Rect.fromCircle(center: center, radius: radius);
       },
     );
   }
@@ -120,7 +118,7 @@ class _LatLongToOffsetDemoPageState extends State<LatLongToOffsetDemoPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const AppDrawer(),
-      appBar: AppBar(title: const Text('LatLng to Offset Demo')),
+      appBar: AppBar(title: const Text('LatLng to Offset')),
       body: FlutterMap(
         options: MapOptions(initialCenter: LatLng(51.5074, -0.1278), initialZoom: 10, maxZoom: 18, minZoom: 1),
         children: [
