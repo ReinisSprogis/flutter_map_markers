@@ -93,7 +93,7 @@ class _AnimatedMarkerDemoPageState extends State<AnimatedMarkerDemoPage> with Si
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const AppDrawer(),
-      appBar: AppBar(title: const Text('Simple Marker Demo')),
+      appBar: AppBar(title: const Text('Animated marker')),
       body: Stack(
         children: [
           FlutterMap(
