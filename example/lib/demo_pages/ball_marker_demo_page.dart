@@ -44,19 +44,15 @@ class _BallMarkerDemoPageState extends State<BallMarkerDemoPage> {
       rotate: true,
       position: position, 
     hitArea: (center, metersToPixels, latLngToPixelOffset, zoomLevel) {
-      final (markerPath, _) = MarkerPresets.ballMarkerPath(center);
+      final (markerPath, _) = MarkerPresets.ballMarkerPath(center,ballRadius: 15,knobHeight: 10);
       return markerPath;
     },
     painter:(canvas, center, metersToPixels, latLngToPixelOffset, zoomLevel) {
-      final (markerPath, ballCenter) = MarkerPresets.ballMarkerPath(center);
+      final (markerPath, ballCenter) = MarkerPresets.ballMarkerPath(center,ballRadius: 15,knobHeight: 10);
       canvas.drawPath(markerPath, fillPaint);
       canvas.drawPath(markerPath, strokePaint);
-      canvas.drawCircle(ballCenter, 20, centerPaint);
-      canvas.drawRect(Rect.fromCenter(center: ballCenter, width: 30, height: 10), rectPaint);
-
-      final bounds = markerPath.getBounds();
-      return bounds;
-
+      canvas.drawCircle(ballCenter, 12, centerPaint);
+      canvas.drawRect(Rect.fromCenter(center: ballCenter, width: 20, height: 8), rectPaint);
     },
     onTap: (){
       ScaffoldMessenger.of(context).showSnackBar(
@@ -73,7 +69,7 @@ class _BallMarkerDemoPageState extends State<BallMarkerDemoPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const AppDrawer(),
-      appBar: AppBar(title: const Text('Simple Marker Demo')),
+      appBar: AppBar(title: const Text('Ball Marker')),
       body: Stack(
         children: [
           FlutterMap(
