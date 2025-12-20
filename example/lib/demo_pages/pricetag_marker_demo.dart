@@ -57,7 +57,7 @@ class _PriceTagMarkerDemoState extends State<PriceTagMarkerDemo> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const AppDrawer(),
-      appBar: AppBar(title: const Text('Simple Marker Demo')),
+      appBar: AppBar(title: const Text('Simple Marker')),
       body: FlutterMap(
         options: MapOptions(initialCenter: LatLng(51.5074, -0.1278), initialZoom: 10, maxZoom: 18, minZoom: 1),
         children: [
