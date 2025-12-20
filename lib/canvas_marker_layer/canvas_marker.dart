@@ -2,7 +2,7 @@ import 'dart:ui';
 import 'package:latlong2/latlong.dart' as coord;
 
 typedef CanvasPainter =
-    Rect Function(
+    void Function (
       Canvas canvas,
       Offset center,
       double Function(double meters, coord.LatLng position) metersToPixels,
@@ -17,6 +17,13 @@ typedef HitArea =
       Offset Function(coord.LatLng latLng, {coord.LatLng? referencePoint}) latLngToPixelOffset,
       int zoomLevel,
     );
+
+typedef MarkerSize = Rect Function(
+      Offset center,
+      double Function(double meters, coord.LatLng position) metersToPixels,
+      Offset Function(coord.LatLng latLng, {coord.LatLng? referencePoint}) latLngToPixelOffset,
+      int zoomLevel,
+);
 
 ///CanvasMarker is a class used to draw markers on a tile.
 ///[painter] must be provided to draw the marker.
@@ -66,6 +73,9 @@ class CanvasMarker {
   ///
   CanvasPainter painter;
 
+  /// Optional size of the marker. If provided, it can be used for culling and hit testing optimizations.
+  MarkerSize? size;
+
   /// If true then counter rotates the marker to camera rotation.
   /// Only works in direct painter mode (when [drawWithCanvasZoom] is set in [MarkerManager]).
   bool rotate;
@@ -73,7 +83,7 @@ class CanvasMarker {
   /// Callback function that is called when the marker is tapped.
   Function? onTap;
 
-  CanvasMarker({required this.position, required this.painter, this.hitArea, this.rotate = false, this.onTap,});
+  CanvasMarker({required this.position, required this.painter, this.hitArea, this.size, this.rotate = false, this.onTap,});
 
   Map<String, dynamic> toJson() => {'lat': position.latitude, 'lng': position.longitude};
 
@@ -111,11 +121,12 @@ class CanvasMarker {
         painter == otherMarker.painter &&
         hitArea == otherMarker.hitArea &&
         rotate == otherMarker.rotate &&
-        onTap == otherMarker.onTap;
+        onTap == otherMarker.onTap && 
+        size == otherMarker.size;
   }
 
   @override
   int get hashCode {
-    return position.hashCode ^ painter.hashCode ^ hitArea.hashCode ^ rotate.hashCode ^ onTap.hashCode;
+    return position.hashCode ^ painter.hashCode ^ hitArea.hashCode ^ rotate.hashCode ^ onTap.hashCode ^ size.hashCode;
   }
 }
