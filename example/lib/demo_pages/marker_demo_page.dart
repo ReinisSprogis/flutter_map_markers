@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:example/app_drawer.dart';
 import 'package:example/utility/utility.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/flutter_map_markers.dart';
@@ -84,9 +85,24 @@ class _MarkerDemoPageState extends State<MarkerDemoPage> {
   /// Generate a CanvasMarker at the given position with the specified styles and behaviors.
   /// Separated into its own method for clarity.
   CanvasMarker _generateMarker(LatLng pos, LatLng clusterLocation, Icon markerIcon, Paint taskPaint, Paint borderPaint, Paint circlePaint, TextPainter textPainter, int index) {
+    final radius = 12.0;
     return CanvasMarker(
       rotate: true,
       position: pos,
+      size: (center, metersToPixels, latLngToPixelOffset, zoomLevel) {
+        // Optional: Your size can be reactively changed based on zoom level too.
+        // If you change your marker shape in the painter based on zoom level,
+        // you probably want to change the size too.
+        if (zoomLevel < 13) {
+          return Rect.fromCircle(center: center, radius: 5);
+        }
+        // Return the size of the marker as used for culling.
+        // If not provided, the marker will be culled based on point position only.
+        // In this case Marker size ratio is 2:3 (width:height).
+        // And Rect constructed here to cover the whole marker area.
+        final bounds = Rect.fromLTRB(center.dx - radius, center.dy - radius * 3, center.dx + radius, center.dy);
+        return bounds;
+      },
       hitArea: (center, metersToPixels, latLngToPixelOffset, zoomLevel) {
         // Optional: Your hit area can be reactively changed based on zoom level too.
         // If you change your marker shape in the painter based on zoom level,
@@ -99,7 +115,7 @@ class _MarkerDemoPageState extends State<MarkerDemoPage> {
         // This is used for hit testing taps and hovers. It uses path.contains to determine if a point is inside the hit area.
         // It allows for non-rectangular hit areas.
         // If it is not provided, a rectangular hit area based on the painter's returned Rect will be used.
-        final (path, _) = MarkerPresets.raindropMarkerPath(center, radius: 12);
+        final (path, _) = MarkerPresets.raindropMarkerPath(center, radius: radius);
         return path;
       },
       painter: (canvas, center, metersToPixels, latLngToPixelOffset, zoomLevel) {
@@ -109,16 +125,13 @@ class _MarkerDemoPageState extends State<MarkerDemoPage> {
         if (zoomLevel < 13) {
           canvas.drawCircle(center, 5, taskPaint);
           canvas.drawCircle(center, 5, borderPaint);
-          return Rect.fromCircle(center: center, radius: 5);
-        }
-       
-        // The [center] is provided LatLng position converted to offset.
+        } else {
+          // The [center] is provided LatLng position converted to offset.
         // In other words [center] is the pixel position of the marker on the canvas.
         // For this example raindrop marker preset is used.
         // The circular part of the raindrop is centered above the provided position.
         // And the bottom tip of the raindrop is at the provided [center] position that points to the location.
         final (path, markerCenterPosition) = MarkerPresets.raindropMarkerPath(center, radius: 12); // Create the raindrop marker path from preset.
-        final bounds = path.getBounds(); // Get the bounds of the path to provide for the hit testing or culling markers outside the view.
         canvas.drawPath(path, taskPaint); // Draws the filled part of the marker
         canvas.drawPath(path, borderPaint); // Draws the border of the marker
 
@@ -126,8 +139,9 @@ class _MarkerDemoPageState extends State<MarkerDemoPage> {
         canvas.drawCircle(markerCenterPosition, 10, circlePaint);
         final iconOffset = markerCenterPosition - Offset(textPainter.width / 2, textPainter.height / 2);
         textPainter.paint(canvas, iconOffset);
-
-        return bounds;
+        }
+       
+        
       },
       onTap: () {
         //Show toast or dialog with info
@@ -205,7 +219,7 @@ class _MarkerDemoPageState extends State<MarkerDemoPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const AppDrawer(),
-      appBar: AppBar(title: const Text('Marker Demo Page')),
+      appBar: AppBar(title: const Text('Marker Demo')),
       body: Stack(
         children: [
           FlutterMap(
@@ -233,7 +247,7 @@ class _MarkerDemoPageState extends State<MarkerDemoPage> {
               ),
             ),
           ),
-          // if (!kIsWeb && true) Positioned(bottom: 16, left: 0, right: 0, child: PerformanceOverlay.allEnabled()),
+           if (!kIsWeb && true) Positioned(bottom: 16, left: 0, right: 0, child: PerformanceOverlay.allEnabled()),
         ],
       ),
     );
