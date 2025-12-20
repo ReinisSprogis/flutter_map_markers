@@ -56,8 +56,6 @@ class _MetersToPixelsDemoPageState extends State<MetersToPixelsDemoPage> {
           // Draw stroke from the center to the edge of the circle.
           canvas.drawLine(center, Offset(center.dx + radiusInPixels, center.dy), strokePaint);
         }
-
-        return Rect.fromCircle(center: center, radius: radiusInPixels);
       },
     );
   }
@@ -66,7 +64,7 @@ class _MetersToPixelsDemoPageState extends State<MetersToPixelsDemoPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const AppDrawer(),
-      appBar: AppBar(title: const Text('Simple Marker Demo')),
+      appBar: AppBar(title: const Text('Meters to Pixels')),
       body: Stack(
         children: [
           FlutterMap(
