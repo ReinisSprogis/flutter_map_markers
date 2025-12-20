@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map_markers/canvas_marker_layer/canvas_marker.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 
+/// A collection of preset marker shapes and their corresponding CanvasMarker generators.
 class MarkerPresets {
   ///Returns a ball shaped Path and the center of the ball.
   static (Path path, Offset arcCenter) ballMarkerPath(Offset center, {double ballRadius = 25, double knobHeight = 15, double knobAngle = pi / 4}) {
@@ -153,8 +154,6 @@ class MarkerPresets {
         canvas.drawPath(path, fillPaint);
         canvas.drawPath(path, borderPaint);
         canvas.drawCircle(markerCenterPosition, radius / 2, circlePaint);
-        final bounds = Rect.fromLTRB(center.dx - radius, center.dy - radius * 3, center.dx + radius, center.dy);
-        return bounds;
       },
       onTap: onTap,
     );
@@ -243,7 +242,6 @@ class MarkerPresets {
         if (zoomLevelTransition != null && zoomLevel < zoomLevelTransition) {
           canvas.drawCircle(center, 5, fillPaint);
           canvas.drawCircle(center, 5, borderPaint);
-          return Rect.fromCircle(center: center, radius: 5);
         }
         // Draw the full marker otherwise
         Path markerPath = createMarkerPath(center, width, height, cornerRadius);
@@ -252,10 +250,93 @@ class MarkerPresets {
 
         final textOffset = center - Offset(textPainter.width / 2, (height + 5) / 2 + textPainter.height / 2);
         textPainter.paint(canvas, textOffset);
-        final bounds = Rect.fromLTRB(center.dx - width / 2, center.dy - height, center.dx + width / 2, center.dy);
-        return bounds;
       },
       onTap: onTap,
     );
   }
+
+  /// Generates an icon marker at the given position.
+  /// 
+  /// [position]: The geographical position of the marker.
+  /// 
+  /// [iconData]: The icon data to display.
+  /// 
+  /// [color]: The color of the icon.
+  /// 
+  /// [size]: The size of the icon.
+  /// 
+  /// [alignment]: The alignment of the icon relative to the marker position.
+  /// 
+  /// [onTap]: Optional callback function to be executed when the marker is tapped.
+  /// 
+  /// [rotate]: Whether the marker should counter-rotate the map.
+ static CanvasMarker iconMarker({
+  required LatLng position,
+  IconData iconData = Icons.location_pin,
+  required Color color,
+  double size = 24.0,
+  Alignment alignment = Alignment.center,
+  VoidCallback? onTap,
+  bool rotate = true,
+}) {
+  final textPainter = TextPainter(
+    text: TextSpan(
+      text: String.fromCharCode(iconData.codePoint),
+      style: TextStyle(
+        color: color,
+        fontSize: size,
+        fontFamily: iconData.fontFamily,
+      ),
+    ),
+    textDirection: TextDirection.ltr,
+  )..layout();
+
+  final double baseline =
+      textPainter.computeDistanceToActualBaseline(TextBaseline.alphabetic);
+
+  Offset topLeftFromAlignment(Offset center) {
+    return Offset(
+      center.dx - (alignment.x + 1) * textPainter.width / 2,
+      center.dy - (alignment.y + 1) * textPainter.height / 2,
+    );
+  }
+
+  Rect bounds(Offset center) {
+    final topLeft = topLeftFromAlignment(center);
+    return Rect.fromLTWH(
+      topLeft.dx,
+      topLeft.dy,
+      textPainter.width,
+      textPainter.height,
+    );
+  }
+
+  return CanvasMarker(
+    rotate: rotate,
+    position: position,
+
+    size: (center, _, _, _) => bounds(center),
+
+    hitArea: onTap != null
+        ? (center, _, _, _) {
+            final path = Path()..addRect(bounds(center));
+            return path;
+          }
+        : null,
+
+    painter: (canvas, center, _, _, _) {
+      final topLeft = topLeftFromAlignment(center);
+
+      final paintOffset = Offset(
+        topLeft.dx,
+        topLeft.dy + (textPainter.height / 2 - baseline),
+      );
+
+      textPainter.paint(canvas, paintOffset);
+    },
+
+    onTap: onTap,
+  );
+}
+
 }
