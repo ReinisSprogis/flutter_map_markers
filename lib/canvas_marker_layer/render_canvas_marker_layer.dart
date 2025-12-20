@@ -3,7 +3,6 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/canvas_marker_layer/canvas_marker.dart';
-import 'package:flutter_map_markers/util/no_op_canvas.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 import 'package:vector_math/vector_math_64.dart' hide Colors;
 
@@ -74,18 +73,14 @@ class RenderCanvasMarkerLayer extends RenderBox {
   bool _tapCandidateHadMultiTouch = false;
 
   /// Converts a distance in meters to screen pixels at the given [point].
-double _metersToPixels(
-  LatLng point,
-  double meters,
-) {
-  final south = const Distance().offset(point, meters, 180);
+  double _metersToPixels(LatLng point, double meters) {
+    final south = const Distance().offset(point, meters, 180);
 
-  final p1 = camera.getOffsetFromOrigin(point);
-  final p2 = camera.getOffsetFromOrigin(south);
+    final p1 = camera.getOffsetFromOrigin(point);
+    final p2 = camera.getOffsetFromOrigin(south);
 
-  return (p1 - p2).distance;
-}
-
+    return (p1 - p2).distance;
+  }
 
   /// Recognizes taps for markers.
   ///
@@ -214,7 +209,6 @@ double _metersToPixels(
     return constraints.biggest;
   }
 
-
   @override
   bool hitTestSelf(Offset position) => true;
 
@@ -232,7 +226,7 @@ double _metersToPixels(
     // Padding is used to reduce pop-in at the edges when the user pans.
     // Why: markers are often larger than a point and may still be visible when
     // their anchor position is just outside the viewport.
-    const double screenPadding = 100.0;
+    const double screenPadding = 0.0;
     CanvasMarker? selectedMarker;
 
     for (int i = 0; i < markers.length; i++) {
@@ -247,14 +241,31 @@ double _metersToPixels(
       }
 
       final screenOffset = camera.getOffsetFromOrigin(marker.position);
+      if (marker.size != null) {
+        Rect markerRect = marker.size!(
+          screenOffset,
+          (meters, latLong) => _metersToPixels(latLong, meters),
+          (latLng, {referencePoint}) => camera.getOffsetFromOrigin(latLng),
+          camera.zoom.ceil(),
+        );
+        //Cull rect got from marker painter
+        markerRect = markerRect.inflate(screenPadding);
+        if (cullMarkers && (markerRect.right < 0 || markerRect.left > size.width || markerRect.bottom < 0 || markerRect.top > size.height)) {
+          continue;
+        }
+      } else {
+        if (cullMarkers &&
+            (screenOffset.dx < -screenPadding ||
+                screenOffset.dx > size.width + screenPadding ||
+                screenOffset.dy < -screenPadding ||
+                screenOffset.dy > size.height + screenPadding)) {
+          continue;
+        }
+      }
 
       // Cull markers outside visible area.
       // Why: Painters can be expensive; skipping off-screen markers is a
       // significant performance win for large marker sets.
-      if (cullMarkers &&
-          (screenOffset.dx < -screenPadding || screenOffset.dx > size.width + screenPadding || screenOffset.dy < -screenPadding || screenOffset.dy > size.height + screenPadding)) {
-        continue;
-      }
 
       _paintMarker(canvas, marker, screenOffset, size);
     }
@@ -291,13 +302,13 @@ double _metersToPixels(
       camera.zoom.ceil(),
     );
 
-    if (paintDebugRect) {
+    if (paintDebugRect && marker.size != null) {
       final debugPaint = Paint()
         ..color = Colors.red
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.0;
 
-      canvas.drawRect(rect, debugPaint);
+      // canvas.drawRect(marker.size(), debugPaint);
     }
 
     if (paintDebugHitArea && marker.hitArea != null) {
@@ -484,17 +495,17 @@ double _metersToPixels(
     // Why: For simple markers, computing the bounds via the painter is a
     // convenient fallback, and keeps hit testing consistent with visuals.
     else {
-      final Rect bounds = marker.painter(
-        NoOpCanvas(),
-        markerScreenOffset,
-        (meters, latLong) => _metersToPixels(latLong, meters),
-        (ll, {referencePoint}) => camera.getOffsetFromOrigin(ll),
-        zoom.ceil(),
-      );
+      // final Rect bounds = marker.painter(
+      //   NoOpCanvas(),
+      //   markerScreenOffset,
+      //   (meters, latLong) => _metersToPixels(latLong, meters),
+      //   (ll, {referencePoint}) => camera.getOffsetFromOrigin(ll),
+      //   zoom.ceil(),
+      // );
 
-      if (bounds.contains(effectiveHitPoint)) {
-        return true;
-      }
+      // if (bounds.contains(effectiveHitPoint)) {
+      //   return true;
+      // }
     }
 
     return false;
