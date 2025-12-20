@@ -24,11 +24,14 @@ class _MetersToPixelsDemoPageState extends State<MetersToPixelsDemoPage> {
   }
 
   CanvasMarker _createMarker(LatLng position, double radius) {
-
     final TextPainter textPainter = TextPainter(
       text: TextSpan(
         text: '${(radius / 1000).toStringAsFixed(1)} km',
-        style: TextStyle(color: Colors.black, fontSize: 14,fontWeight: FontWeight.bold),
+        style: TextStyle(
+          color: Colors.black,
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+        ),
       ),
       textDirection: TextDirection.ltr,
     );
@@ -37,26 +40,33 @@ class _MetersToPixelsDemoPageState extends State<MetersToPixelsDemoPage> {
     return CanvasMarker(
       rotate: true,
       position: position,
-      painter: (canvas, center, metersToPixels, latLngToPixelOffset, zoomLevel) {
-        final paint = Paint()..color = Colors.blue.withAlpha(128);
-        final strokePaint = Paint()
-          ..color = Colors.black
-          ..strokeWidth = 2.0
-          ..style = PaintingStyle.stroke;
-        final radiusInMeters = 10000.0;
-        // Get radius in pixels based on current latitude
-        final radiusInPixels = metersToPixels(radiusInMeters, position);
-        // Draw circle
-        canvas.drawCircle(center, radiusInPixels, paint);
-        
+      painter:
+          (canvas, center, metersToPixels, latLngToPixelOffset, zoomLevel) {
+            final paint = Paint()..color = Colors.blue.withAlpha(128);
+            final strokePaint = Paint()
+              ..color = Colors.black
+              ..strokeWidth = 2.0
+              ..style = PaintingStyle.stroke;
+            final radiusInMeters = 10000.0;
+            // Get radius in pixels based on current latitude
+            final radiusInPixels = metersToPixels(radiusInMeters, position);
+            // Draw circle
+            canvas.drawCircle(center, radiusInPixels, paint);
 
-        if (zoomLevel > 8) {
-          // Draw text above the circle to indicate radius
-          textPainter.paint(canvas, Offset(center.dx + (radiusInPixels / 2), center.dy - 25));
-          // Draw stroke from the center to the edge of the circle.
-          canvas.drawLine(center, Offset(center.dx + radiusInPixels, center.dy), strokePaint);
-        }
-      },
+            if (zoomLevel > 8) {
+              // Draw text above the circle to indicate radius
+              textPainter.paint(
+                canvas,
+                Offset(center.dx + (radiusInPixels / 2), center.dy - 25),
+              );
+              // Draw stroke from the center to the edge of the circle.
+              canvas.drawLine(
+                center,
+                Offset(center.dx + radiusInPixels, center.dy),
+                strokePaint,
+              );
+            }
+          },
     );
   }
 
@@ -80,7 +90,11 @@ class _MetersToPixelsDemoPageState extends State<MetersToPixelsDemoPage> {
               },
             ),
             children: [
-              TileLayer(userAgentPackageName: 'com.flutter_map_markers.example', urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
+              TileLayer(
+                userAgentPackageName: 'com.flutter_map_markers.example',
+                urlTemplate:
+                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+              ),
               CanvasMarkerLayer(markers: markers, cullMarkers: false),
             ],
           ),
@@ -89,8 +103,14 @@ class _MetersToPixelsDemoPageState extends State<MetersToPixelsDemoPage> {
             child: Container(
               margin: const EdgeInsets.only(top: 10),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(color: Colors.white.withAlpha(204), borderRadius: BorderRadius.circular(8)),
-              child: const Text('Tap anywhere to add a marker', style: TextStyle(fontSize: 16)),
+              decoration: BoxDecoration(
+                color: Colors.white.withAlpha(204),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'Tap anywhere to add a marker',
+                style: TextStyle(fontSize: 16),
+              ),
             ),
           ),
         ],

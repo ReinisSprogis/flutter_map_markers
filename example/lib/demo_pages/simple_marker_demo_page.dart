@@ -22,19 +22,24 @@ class _SimpleMarkerDemoPageState extends State<SimpleMarkerDemoPage> {
   void initState() {
     super.initState();
     final london = LatLng(51.5074, -0.1278);
-    markers.add(_createMarker(london,));
+    markers.add(_createMarker(london));
   }
 
   CanvasMarker _createMarker(LatLng position) {
-    return MarkerPresets.raindropMarker( position: position, radius: 12,
-     onTap: (){
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Marker at (${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}) tapped!'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-     });
+    return MarkerPresets.raindropMarker(
+      position: position,
+      radius: 12,
+      onTap: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Marker at (${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}) tapped!',
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -57,7 +62,11 @@ class _SimpleMarkerDemoPageState extends State<SimpleMarkerDemoPage> {
               },
             ),
             children: [
-              TileLayer(userAgentPackageName: 'com.flutter_map_markers.example', urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
+              TileLayer(
+                userAgentPackageName: 'com.flutter_map_markers.example',
+                urlTemplate:
+                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+              ),
               CanvasMarkerLayer(markers: markers, drawHitMarkerLast: true),
             ],
           ),
@@ -66,8 +75,14 @@ class _SimpleMarkerDemoPageState extends State<SimpleMarkerDemoPage> {
             child: Container(
               margin: const EdgeInsets.only(top: 10),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(color: Colors.white.withAlpha(204), borderRadius: BorderRadius.circular(8)),
-              child: const Text('Tap anywhere to add a marker', style: TextStyle(fontSize: 16)),
+              decoration: BoxDecoration(
+                color: Colors.white.withAlpha(204),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'Tap anywhere to add a marker',
+                style: TextStyle(fontSize: 16),
+              ),
             ),
           ),
         ],

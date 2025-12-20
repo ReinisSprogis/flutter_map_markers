@@ -18,7 +18,8 @@ class AnimatedMarkerDemoPage extends StatefulWidget {
   State<AnimatedMarkerDemoPage> createState() => _AnimatedMarkerDemoPageState();
 }
 
-class _AnimatedMarkerDemoPageState extends State<AnimatedMarkerDemoPage> with SingleTickerProviderStateMixin {
+class _AnimatedMarkerDemoPageState extends State<AnimatedMarkerDemoPage>
+    with SingleTickerProviderStateMixin {
   List<CanvasMarker> markers = [];
   late final AnimationController _animationController;
   late final Animation<double> _animation;
@@ -34,8 +35,14 @@ class _AnimatedMarkerDemoPageState extends State<AnimatedMarkerDemoPage> with Si
     super.initState();
     final london = LatLng(51.5074, -0.1278);
     markers.add(_createMarker(london, radius: 12));
-    _animationController = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
-    _animation = CurvedAnimation(parent: _animationController, curve: Curves.bounceOut);
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _animation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.bounceOut,
+    );
   }
 
   void animateMarkerSize(int index) {
@@ -54,8 +61,13 @@ class _AnimatedMarkerDemoPageState extends State<AnimatedMarkerDemoPage> with Si
       if (_currentlyAnimatingIndex != index) return; // Safety check
 
       setState(() {
-        final radius = initialMarkerRadius + (expandedMarkerRadius - initialMarkerRadius) * _animation.value;
-        markers[index] = MarkerPresets.raindropMarker(radius: radius, position: markers[index].position);
+        final radius =
+            initialMarkerRadius +
+            (expandedMarkerRadius - initialMarkerRadius) * _animation.value;
+        markers[index] = MarkerPresets.raindropMarker(
+          radius: radius,
+          position: markers[index].position,
+        );
       });
     }
 
@@ -63,7 +75,10 @@ class _AnimatedMarkerDemoPageState extends State<AnimatedMarkerDemoPage> with Si
       if (status == AnimationStatus.completed) {
         // Set marker to fixed size after animation completes
         setState(() {
-          markers[index] = MarkerPresets.raindropMarker(radius: expandedMarkerRadius, position: markers[index].position);
+          markers[index] = MarkerPresets.raindropMarker(
+            radius: expandedMarkerRadius,
+            position: markers[index].position,
+          );
         });
 
         // Remove listeners
@@ -86,7 +101,10 @@ class _AnimatedMarkerDemoPageState extends State<AnimatedMarkerDemoPage> with Si
   }
 
   CanvasMarker _createMarker(LatLng position, {double? radius}) {
-    return MarkerPresets.raindropMarker(radius: radius ?? initialMarkerRadius, position: position);
+    return MarkerPresets.raindropMarker(
+      radius: radius ?? initialMarkerRadius,
+      position: position,
+    );
   }
 
   @override
@@ -110,7 +128,11 @@ class _AnimatedMarkerDemoPageState extends State<AnimatedMarkerDemoPage> with Si
               },
             ),
             children: [
-              TileLayer(userAgentPackageName: 'com.flutter_map_markers.example', urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
+              TileLayer(
+                userAgentPackageName: 'com.flutter_map_markers.example',
+                urlTemplate:
+                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+              ),
               CanvasMarkerLayer(markers: markers, drawHitMarkerLast: true),
             ],
           ),
@@ -119,8 +141,14 @@ class _AnimatedMarkerDemoPageState extends State<AnimatedMarkerDemoPage> with Si
             child: Container(
               margin: const EdgeInsets.only(top: 10),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(color: Colors.white.withAlpha(204), borderRadius: BorderRadius.circular(8)),
-              child: const Text('Tap anywhere to add a marker', style: TextStyle(fontSize: 16)),
+              decoration: BoxDecoration(
+                color: Colors.white.withAlpha(204),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'Tap anywhere to add a marker',
+                style: TextStyle(fontSize: 16),
+              ),
             ),
           ),
         ],

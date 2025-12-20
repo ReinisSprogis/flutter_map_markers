@@ -32,14 +32,23 @@ class _IconMarkerDemoPageState extends State<IconMarkerDemoPage> {
     final london = LatLng(51.5074, -0.1278);
 
     for (int i = 0; i < count; i++) {
-      Color color = Color.fromARGB(255, random.nextInt(256), random.nextInt(256), random.nextInt(256));
+      Color color = Color.fromARGB(
+        255,
+        random.nextInt(256),
+        random.nextInt(256),
+        random.nextInt(256),
+      );
       final point = Utility.clusterPoint(london, random);
       markers.add(_createMarker(point, color));
     }
   }
 
   CanvasMarker _createMarker(LatLng position, Color color) {
-    return MarkerPresets.iconMarker(position: position, color: color,alignment: Alignment.topCenter);
+    return MarkerPresets.iconMarker(
+      position: position,
+      color: color,
+      alignment: Alignment.topCenter,
+    );
   }
 
   @override
@@ -50,13 +59,28 @@ class _IconMarkerDemoPageState extends State<IconMarkerDemoPage> {
       body: Stack(
         children: [
           FlutterMap(
-            options: MapOptions(initialCenter: LatLng(51.5074, -0.1278), initialZoom: 5, maxZoom: 18, minZoom: 1),
+            options: MapOptions(
+              initialCenter: LatLng(51.5074, -0.1278),
+              initialZoom: 5,
+              maxZoom: 18,
+              minZoom: 1,
+            ),
             children: [
-              TileLayer(userAgentPackageName: 'com.flutter_map_markers.example', urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
+              TileLayer(
+                userAgentPackageName: 'com.flutter_map_markers.example',
+                urlTemplate:
+                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+              ),
               CanvasMarkerLayer(markers: markers, drawHitMarkerLast: true),
             ],
           ),
-          if (!kIsWeb && true) Positioned(bottom: 16, left: 0, right: 0, child: PerformanceOverlay.allEnabled()),
+          if (!kIsWeb && true)
+            Positioned(
+              bottom: 16,
+              left: 0,
+              right: 0,
+              child: PerformanceOverlay.allEnabled(),
+            ),
           Align(
             alignment: Alignment.topCenter,
             child: Column(
@@ -78,7 +102,13 @@ class _IconMarkerDemoPageState extends State<IconMarkerDemoPage> {
                     },
                   ),
                 ),
-                Container(color: Colors.white70, padding: const EdgeInsets.all(8.0), child: Text('Tap on the map to add more markers. Total markers: ${markers.length}')),
+                Container(
+                  color: Colors.white70,
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    'Tap on the map to add more markers. Total markers: ${markers.length}',
+                  ),
+                ),
               ],
             ),
           ),

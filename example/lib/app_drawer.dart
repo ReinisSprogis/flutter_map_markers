@@ -19,14 +19,19 @@ class AppDrawer extends StatelessWidget {
         children: [
           const DrawerHeader(
             decoration: BoxDecoration(color: Colors.blue),
-            child: Text('Navigation', style: TextStyle(color: Colors.white, fontSize: 24)),
+            child: Text(
+              'Navigation',
+              style: TextStyle(color: Colors.white, fontSize: 24),
+            ),
           ),
           ListTile(
             leading: const Icon(Icons.map),
             title: const Text('Marker Demo'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const MarkerDemoPage()));
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => const MarkerDemoPage()),
+              );
             },
           ),
           ListTile(
@@ -34,15 +39,23 @@ class AppDrawer extends StatelessWidget {
             title: const Text('Simple Marker'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const SimpleMarkerDemoPage()));
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => const SimpleMarkerDemoPage(),
+                ),
+              );
             },
           ),
-           ListTile(
+          ListTile(
             leading: const Icon(Icons.price_check),
             title: const Text('Price Tag Marker'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const PriceTagMarkerDemo()));
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => const PriceTagMarkerDemo(),
+                ),
+              );
             },
           ),
           ListTile(
@@ -50,7 +63,11 @@ class AppDrawer extends StatelessWidget {
             title: const Text('Animated Marker'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const AnimatedMarkerDemoPage()));
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => const AnimatedMarkerDemoPage(),
+                ),
+              );
             },
           ),
           ListTile(
@@ -58,32 +75,48 @@ class AppDrawer extends StatelessWidget {
             title: const Text('Meters to pixels'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const MetersToPixelsDemoPage()));
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => const MetersToPixelsDemoPage(),
+                ),
+              );
             },
           ),
-           ListTile(
+          ListTile(
             leading: const Icon(Icons.straighten),
             title: const Text('LatLng to Offset'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const LatLongToOffsetDemoPage()));
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => const LatLongToOffsetDemoPage(),
+                ),
+              );
             },
           ),
 
-           ListTile(
+          ListTile(
             leading: const Icon(Icons.bubble_chart),
             title: const Text('Ball Marker'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const BallMarkerDemoPage()));
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => const BallMarkerDemoPage(),
+                ),
+              );
             },
           ),
-           ListTile(
+          ListTile(
             leading: const Icon(Icons.bubble_chart),
             title: const Text('Icon Marker'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const IconMarkerDemoPage()));
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => const IconMarkerDemoPage(),
+                ),
+              );
             },
           ),
         ],

@@ -7,19 +7,33 @@ import 'package:latlong2/latlong.dart' hide Path;
 /// A collection of preset marker shapes and their corresponding CanvasMarker generators.
 class MarkerPresets {
   ///Returns a ball shaped Path and the center of the ball.
-  static (Path path, Offset arcCenter) ballMarkerPath(Offset center, {double ballRadius = 25, double knobHeight = 15, double knobAngle = pi / 4}) {
+  static (Path path, Offset arcCenter) ballMarkerPath(
+    Offset center, {
+    double ballRadius = 25,
+    double knobHeight = 15,
+    double knobAngle = pi / 4,
+  }) {
     final double halfAngle = knobAngle / 2;
 
     // Bottom tip of the knob
     final Offset bottomTip = center;
 
     // Knob base points (left and right)
-    final Offset leftKnob = Offset(bottomTip.dx - knobHeight * sin(halfAngle), bottomTip.dy - knobHeight * cos(halfAngle));
+    final Offset leftKnob = Offset(
+      bottomTip.dx - knobHeight * sin(halfAngle),
+      bottomTip.dy - knobHeight * cos(halfAngle),
+    );
 
-    final Offset rightKnob = Offset(bottomTip.dx + knobHeight * sin(halfAngle), bottomTip.dy - knobHeight * cos(halfAngle));
+    final Offset rightKnob = Offset(
+      bottomTip.dx + knobHeight * sin(halfAngle),
+      bottomTip.dy - knobHeight * cos(halfAngle),
+    );
 
     // Midpoint of the chord
-    final Offset mid = Offset((leftKnob.dx + rightKnob.dx) / 2, (leftKnob.dy + rightKnob.dy) / 2);
+    final Offset mid = Offset(
+      (leftKnob.dx + rightKnob.dx) / 2,
+      (leftKnob.dy + rightKnob.dy) / 2,
+    );
 
     final double chordLength = (rightKnob - leftKnob).distance;
     final double halfChord = chordLength / 2;
@@ -28,7 +42,9 @@ class MarkerPresets {
     final double safeHalfChord = min(halfChord, ballRadius);
 
     // Sagitta height (distance from midpoint to arc center)
-    final double h = sqrt(ballRadius * ballRadius - safeHalfChord * safeHalfChord);
+    final double h = sqrt(
+      ballRadius * ballRadius - safeHalfChord * safeHalfChord,
+    );
 
     // Normalized perpendicular vector (90° CCW from chord)
     final Offset chordDir = (rightKnob - leftKnob) / chordLength;
@@ -44,7 +60,12 @@ class MarkerPresets {
     // Construct the path
     final Path path = Path()
       ..moveTo(leftKnob.dx, leftKnob.dy)
-      ..arcToPoint(rightKnob, radius: Radius.circular(ballRadius), largeArc: largeArc, clockwise: clockwise)
+      ..arcToPoint(
+        rightKnob,
+        radius: Radius.circular(ballRadius),
+        largeArc: largeArc,
+        clockwise: clockwise,
+      )
       ..lineTo(bottomTip.dx, bottomTip.dy)
       ..close();
 
@@ -55,7 +76,10 @@ class MarkerPresets {
   /// The bottom of the raindrop is at the provided [bottom] Offset.
   /// [radius] defines the radius of the circular part of the raindrop.
   /// The center of the circular part is located 2 * radius above the bottom point.
-  static (Path path, Offset center) raindropMarkerPath(Offset bottom, {double radius = 20}) {
+  static (Path path, Offset center) raindropMarkerPath(
+    Offset bottom, {
+    double radius = 20,
+  }) {
     // Circle center is 2 radius above the final bottom anchor.
     final cx = bottom.dx;
     final cy = bottom.dy - radius * 2;
@@ -91,7 +115,14 @@ class MarkerPresets {
     path.cubicTo(cTR1.dx, cTR1.dy, cTR2.dx, cTR2.dy, pRight.dx, pRight.dy);
 
     // Right → Deformed Bottom
-    path.cubicTo(cRB1.dx, cRB1.dy, cRB2.dx, cRB2.dy, pDropBottom.dx, pDropBottom.dy);
+    path.cubicTo(
+      cRB1.dx,
+      cRB1.dy,
+      cRB2.dx,
+      cRB2.dy,
+      pDropBottom.dx,
+      pDropBottom.dy,
+    );
 
     // Bottom → Left
     path.cubicTo(cBL1.dx, cBL1.dy, cBL2.dx, cBL2.dy, pLeft.dx, pLeft.dy);
@@ -146,15 +177,20 @@ class MarkerPresets {
       rotate: rotate,
       position: position,
       hitArea: (center, metersToPixels, latLngToPixelOffset, zoomLevel) {
-        final (path, _) = MarkerPresets.raindropMarkerPath(center, radius: radius);
+        final (path, _) = MarkerPresets.raindropMarkerPath(
+          center,
+          radius: radius,
+        );
         return path;
       },
-      painter: (canvas, center, metersToPixels, latLngToPixelOffset, zoomLevel) {
-        final (path, markerCenterPosition) = MarkerPresets.raindropMarkerPath(center, radius: radius);
-        canvas.drawPath(path, fillPaint);
-        canvas.drawPath(path, borderPaint);
-        canvas.drawCircle(markerCenterPosition, radius / 2, circlePaint);
-      },
+      painter:
+          (canvas, center, metersToPixels, latLngToPixelOffset, zoomLevel) {
+            final (path, markerCenterPosition) =
+                MarkerPresets.raindropMarkerPath(center, radius: radius);
+            canvas.drawPath(path, fillPaint);
+            canvas.drawPath(path, borderPaint);
+            canvas.drawCircle(markerCenterPosition, radius / 2, circlePaint);
+          },
       onTap: onTap,
     );
   }
@@ -186,10 +222,17 @@ class MarkerPresets {
     bool rotate = true,
     int? zoomLevelTransition,
   }) {
-    final textPainter = TextPainter(textAlign: TextAlign.center, textDirection: TextDirection.ltr);
+    final textPainter = TextPainter(
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+    );
     textPainter.text = TextSpan(
       text: text,
-      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor),
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: textColor,
+      ),
     );
     textPainter.layout();
 
@@ -206,18 +249,45 @@ class MarkerPresets {
     final double height = textPainter.height + 8;
     final double cornerRadius = 4;
 
-    Path createMarkerPath(Offset center, double width, double height, double cornerRadius) {
+    Path createMarkerPath(
+      Offset center,
+      double width,
+      double height,
+      double cornerRadius,
+    ) {
       Path markerPath = Path();
       markerPath.moveTo(center.dx, center.dy);
       markerPath.lineTo(center.dx - 2.5, center.dy - 5);
       markerPath.lineTo(center.dx - width / 2 + cornerRadius, center.dy - 5);
-      markerPath.arcToPoint(Offset(center.dx - width / 2, center.dy - 5 - cornerRadius), radius: Radius.circular(cornerRadius), clockwise: true);
-      markerPath.lineTo(center.dx - width / 2, center.dy - height + cornerRadius);
-      markerPath.arcToPoint(Offset(center.dx - width / 2 + cornerRadius, center.dy - height), radius: Radius.circular(cornerRadius), clockwise: true);
-      markerPath.lineTo(center.dx + width / 2 - cornerRadius, center.dy - height);
-      markerPath.arcToPoint(Offset(center.dx + width / 2, center.dy - height + cornerRadius), radius: Radius.circular(cornerRadius), clockwise: true);
+      markerPath.arcToPoint(
+        Offset(center.dx - width / 2, center.dy - 5 - cornerRadius),
+        radius: Radius.circular(cornerRadius),
+        clockwise: true,
+      );
+      markerPath.lineTo(
+        center.dx - width / 2,
+        center.dy - height + cornerRadius,
+      );
+      markerPath.arcToPoint(
+        Offset(center.dx - width / 2 + cornerRadius, center.dy - height),
+        radius: Radius.circular(cornerRadius),
+        clockwise: true,
+      );
+      markerPath.lineTo(
+        center.dx + width / 2 - cornerRadius,
+        center.dy - height,
+      );
+      markerPath.arcToPoint(
+        Offset(center.dx + width / 2, center.dy - height + cornerRadius),
+        radius: Radius.circular(cornerRadius),
+        clockwise: true,
+      );
       markerPath.lineTo(center.dx + width / 2, center.dy - 5 - cornerRadius);
-      markerPath.arcToPoint(Offset(center.dx + width / 2 - cornerRadius, center.dy - 5), radius: Radius.circular(cornerRadius), clockwise: true);
+      markerPath.arcToPoint(
+        Offset(center.dx + width / 2 - cornerRadius, center.dy - 5),
+        radius: Radius.circular(cornerRadius),
+        clockwise: true,
+      );
       markerPath.lineTo(center.dx + 2.5, center.dy - 5);
       markerPath.close();
       return markerPath;
@@ -229,114 +299,133 @@ class MarkerPresets {
       hitArea: onTap != null
           ? (center, metersToPixels, latLngToPixelOffset, zoomLevel) {
               // Return a simple circle hit area below the zoom level transition
-              if (zoomLevelTransition != null && zoomLevel < zoomLevelTransition) {
-                return Path()..addOval(Rect.fromCircle(center: center, radius: 5));
+              if (zoomLevelTransition != null &&
+                  zoomLevel < zoomLevelTransition) {
+                return Path()
+                  ..addOval(Rect.fromCircle(center: center, radius: 5));
               }
               // Return the full marker path otherwise
-              Path markerPath = createMarkerPath(center, width, height, cornerRadius);
+              Path markerPath = createMarkerPath(
+                center,
+                width,
+                height,
+                cornerRadius,
+              );
               return markerPath;
             }
           : null,
-      painter: (canvas, center, metersToPixels, latLngToPixelOffset, zoomLevel) {
-        // Draw a simple circle below the zoom level transition
-        if (zoomLevelTransition != null && zoomLevel < zoomLevelTransition) {
-          canvas.drawCircle(center, 5, fillPaint);
-          canvas.drawCircle(center, 5, borderPaint);
-        }
-        // Draw the full marker otherwise
-        Path markerPath = createMarkerPath(center, width, height, cornerRadius);
-        canvas.drawPath(markerPath, fillPaint);
-        canvas.drawPath(markerPath, borderPaint);
+      painter:
+          (canvas, center, metersToPixels, latLngToPixelOffset, zoomLevel) {
+            // Draw a simple circle below the zoom level transition
+            if (zoomLevelTransition != null &&
+                zoomLevel < zoomLevelTransition) {
+              canvas.drawCircle(center, 5, fillPaint);
+              canvas.drawCircle(center, 5, borderPaint);
+            }
+            // Draw the full marker otherwise
+            Path markerPath = createMarkerPath(
+              center,
+              width,
+              height,
+              cornerRadius,
+            );
+            canvas.drawPath(markerPath, fillPaint);
+            canvas.drawPath(markerPath, borderPaint);
 
-        final textOffset = center - Offset(textPainter.width / 2, (height + 5) / 2 + textPainter.height / 2);
-        textPainter.paint(canvas, textOffset);
-      },
+            final textOffset =
+                center -
+                Offset(
+                  textPainter.width / 2,
+                  (height + 5) / 2 + textPainter.height / 2,
+                );
+            textPainter.paint(canvas, textOffset);
+          },
       onTap: onTap,
     );
   }
 
   /// Generates an icon marker at the given position.
-  /// 
+  ///
   /// [position]: The geographical position of the marker.
-  /// 
+  ///
   /// [iconData]: The icon data to display.
-  /// 
+  ///
   /// [color]: The color of the icon.
-  /// 
+  ///
   /// [size]: The size of the icon.
-  /// 
+  ///
   /// [alignment]: The alignment of the icon relative to the marker position.
-  /// 
+  ///
   /// [onTap]: Optional callback function to be executed when the marker is tapped.
-  /// 
+  ///
   /// [rotate]: Whether the marker should counter-rotate the map.
- static CanvasMarker iconMarker({
-  required LatLng position,
-  IconData iconData = Icons.location_pin,
-  required Color color,
-  double size = 24.0,
-  Alignment alignment = Alignment.center,
-  VoidCallback? onTap,
-  bool rotate = true,
-}) {
-  final textPainter = TextPainter(
-    text: TextSpan(
-      text: String.fromCharCode(iconData.codePoint),
-      style: TextStyle(
-        color: color,
-        fontSize: size,
-        fontFamily: iconData.fontFamily,
+  static CanvasMarker iconMarker({
+    required LatLng position,
+    IconData iconData = Icons.location_pin,
+    required Color color,
+    double size = 24.0,
+    Alignment alignment = Alignment.center,
+    VoidCallback? onTap,
+    bool rotate = true,
+  }) {
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: String.fromCharCode(iconData.codePoint),
+        style: TextStyle(
+          color: color,
+          fontSize: size,
+          fontFamily: iconData.fontFamily,
+        ),
       ),
-    ),
-    textDirection: TextDirection.ltr,
-  )..layout();
+      textDirection: TextDirection.ltr,
+    )..layout();
 
-  final double baseline =
-      textPainter.computeDistanceToActualBaseline(TextBaseline.alphabetic);
-
-  Offset topLeftFromAlignment(Offset center) {
-    return Offset(
-      center.dx - (alignment.x + 1) * textPainter.width / 2,
-      center.dy - (alignment.y + 1) * textPainter.height / 2,
+    final double baseline = textPainter.computeDistanceToActualBaseline(
+      TextBaseline.alphabetic,
     );
-  }
 
-  Rect bounds(Offset center) {
-    final topLeft = topLeftFromAlignment(center);
-    return Rect.fromLTWH(
-      topLeft.dx,
-      topLeft.dy,
-      textPainter.width,
-      textPainter.height,
-    );
-  }
-
-  return CanvasMarker(
-    rotate: rotate,
-    position: position,
-
-    size: (center, _, _, _) => bounds(center),
-
-    hitArea: onTap != null
-        ? (center, _, _, _) {
-            final path = Path()..addRect(bounds(center));
-            return path;
-          }
-        : null,
-
-    painter: (canvas, center, _, _, _) {
-      final topLeft = topLeftFromAlignment(center);
-
-      final paintOffset = Offset(
-        topLeft.dx,
-        topLeft.dy + (textPainter.height / 2 - baseline),
+    Offset topLeftFromAlignment(Offset center) {
+      return Offset(
+        center.dx - (alignment.x + 1) * textPainter.width / 2,
+        center.dy - (alignment.y + 1) * textPainter.height / 2,
       );
+    }
 
-      textPainter.paint(canvas, paintOffset);
-    },
+    Rect bounds(Offset center) {
+      final topLeft = topLeftFromAlignment(center);
+      return Rect.fromLTWH(
+        topLeft.dx,
+        topLeft.dy,
+        textPainter.width,
+        textPainter.height,
+      );
+    }
 
-    onTap: onTap,
-  );
-}
+    return CanvasMarker(
+      rotate: rotate,
+      position: position,
 
+      size: (center, _, _, _) => bounds(center),
+
+      hitArea: onTap != null
+          ? (center, _, _, _) {
+              final path = Path()..addRect(bounds(center));
+              return path;
+            }
+          : null,
+
+      painter: (canvas, center, _, _, _) {
+        final topLeft = topLeftFromAlignment(center);
+
+        final paintOffset = Offset(
+          topLeft.dx,
+          topLeft.dy + (textPainter.height / 2 - baseline),
+        );
+
+        textPainter.paint(canvas, paintOffset);
+      },
+
+      onTap: onTap,
+    );
+  }
 }

@@ -2,11 +2,12 @@ import 'dart:ui';
 import 'package:latlong2/latlong.dart' as coord;
 
 typedef CanvasPainter =
-    void Function (
+    void Function(
       Canvas canvas,
       Offset center,
       double Function(double meters, coord.LatLng position) metersToPixels,
-      Offset Function(coord.LatLng latLng, {coord.LatLng? referencePoint}) latLngToPixelOffset,
+      Offset Function(coord.LatLng latLng, {coord.LatLng? referencePoint})
+      latLngToPixelOffset,
       int zoomLevel,
     );
 
@@ -14,16 +15,19 @@ typedef HitArea =
     Path Function(
       Offset center,
       double Function(double meters, coord.LatLng position) metersToPixels,
-      Offset Function(coord.LatLng latLng, {coord.LatLng? referencePoint}) latLngToPixelOffset,
+      Offset Function(coord.LatLng latLng, {coord.LatLng? referencePoint})
+      latLngToPixelOffset,
       int zoomLevel,
     );
 
-typedef MarkerSize = Rect Function(
+typedef MarkerSize =
+    Rect Function(
       Offset center,
       double Function(double meters, coord.LatLng position) metersToPixels,
-      Offset Function(coord.LatLng latLng, {coord.LatLng? referencePoint}) latLngToPixelOffset,
+      Offset Function(coord.LatLng latLng, {coord.LatLng? referencePoint})
+      latLngToPixelOffset,
       int zoomLevel,
-);
+    );
 
 ///CanvasMarker is a class used to draw markers on a tile.
 ///[painter] must be provided to draw the marker.
@@ -83,9 +87,19 @@ class CanvasMarker {
   /// Callback function that is called when the marker is tapped.
   Function? onTap;
 
-  CanvasMarker({required this.position, required this.painter, this.hitArea, this.size, this.rotate = false, this.onTap,});
+  CanvasMarker({
+    required this.position,
+    required this.painter,
+    this.hitArea,
+    this.size,
+    this.rotate = false,
+    this.onTap,
+  });
 
-  Map<String, dynamic> toJson() => {'lat': position.latitude, 'lng': position.longitude};
+  Map<String, dynamic> toJson() => {
+    'lat': position.latitude,
+    'lng': position.longitude,
+  };
 
   /// Copy the marker with new properties.
   CanvasMarker copyWith({
@@ -121,12 +135,17 @@ class CanvasMarker {
         painter == otherMarker.painter &&
         hitArea == otherMarker.hitArea &&
         rotate == otherMarker.rotate &&
-        onTap == otherMarker.onTap && 
+        onTap == otherMarker.onTap &&
         size == otherMarker.size;
   }
 
   @override
   int get hashCode {
-    return position.hashCode ^ painter.hashCode ^ hitArea.hashCode ^ rotate.hashCode ^ onTap.hashCode ^ size.hashCode;
+    return position.hashCode ^
+        painter.hashCode ^
+        hitArea.hashCode ^
+        rotate.hashCode ^
+        onTap.hashCode ^
+        size.hashCode;
   }
 }

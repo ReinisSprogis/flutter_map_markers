@@ -89,35 +89,36 @@ class RenderCanvasMarkerLayer extends RenderBox {
   ///
   /// Note: We only add a pointer to this recognizer when a marker was hit on
   /// pointer-down. This avoids constantly competing with the map for gestures.
-  late final TapGestureRecognizer _tapGestureRecognizer = TapGestureRecognizer(debugOwner: this)
-    ..onTapUp = (details) {
-      final markerIndex = _tapCandidateMarkerIndex;
-      if (markerIndex == null) return;
-      if (_tapCandidateHadMultiTouch) {
-        _clearTapCandidate();
-        return;
-      }
+  late final TapGestureRecognizer _tapGestureRecognizer =
+      TapGestureRecognizer(debugOwner: this)
+        ..onTapUp = (details) {
+          final markerIndex = _tapCandidateMarkerIndex;
+          if (markerIndex == null) return;
+          if (_tapCandidateHadMultiTouch) {
+            _clearTapCandidate();
+            return;
+          }
 
-      final localPosition = globalToLocal(details.globalPosition);
-      final upIndex = hitTestMarkers(localPosition);
-      if (upIndex != markerIndex) {
-        _clearTapCandidate();
-        return;
-      }
+          final localPosition = globalToLocal(details.globalPosition);
+          final upIndex = hitTestMarkers(localPosition);
+          if (upIndex != markerIndex) {
+            _clearTapCandidate();
+            return;
+          }
 
-      final marker = markers[markerIndex];
-      marker.onTap?.call();
+          final marker = markers[markerIndex];
+          marker.onTap?.call();
 
-      if (drawHitMarkerLast) {
-        _lastSelectedMarkerIndex = markerIndex;
-        markNeedsPaint();
-      }
+          if (drawHitMarkerLast) {
+            _lastSelectedMarkerIndex = markerIndex;
+            markNeedsPaint();
+          }
 
-      _clearTapCandidate();
-    }
-    ..onTapCancel = () {
-      _clearTapCandidate();
-    };
+          _clearTapCandidate();
+        }
+        ..onTapCancel = () {
+          _clearTapCandidate();
+        };
 
   /// Clears the current tap candidate state.
   ///
@@ -221,7 +222,10 @@ class RenderCanvasMarkerLayer extends RenderBox {
 
     canvas.save();
     canvas.translate(offset.dx, offset.dy);
-    canvas.clipRect(Rect.fromLTWH(0, 0, size.width, size.height), doAntiAlias: false);
+    canvas.clipRect(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      doAntiAlias: false,
+    );
 
     // Padding is used to reduce pop-in at the edges when the user pans.
     // Why: markers are often larger than a point and may still be visible when
@@ -250,7 +254,11 @@ class RenderCanvasMarkerLayer extends RenderBox {
         );
         //Cull rect got from marker painter
         markerRect = markerRect.inflate(screenPadding);
-        if (cullMarkers && (markerRect.right < 0 || markerRect.left > size.width || markerRect.bottom < 0 || markerRect.top > size.height)) {
+        if (cullMarkers &&
+            (markerRect.right < 0 ||
+                markerRect.left > size.width ||
+                markerRect.bottom < 0 ||
+                markerRect.top > size.height)) {
           continue;
         }
       } else {
@@ -281,7 +289,12 @@ class RenderCanvasMarkerLayer extends RenderBox {
     canvas.restore();
   }
 
-  void _paintMarker(Canvas canvas, CanvasMarker marker, Offset screenOffset, Size size) {
+  void _paintMarker(
+    Canvas canvas,
+    CanvasMarker marker,
+    Offset screenOffset,
+    Size size,
+  ) {
     final shouldRotate = marker.rotate;
 
     canvas.save();
@@ -355,7 +368,9 @@ class RenderCanvasMarkerLayer extends RenderBox {
     // Desktop trackpad pan/zoom (and some platforms) emit pan-zoom events.
     // Why: these represent scrolling/zooming intent and should never trigger
     // marker taps even if they begin over a marker.
-    if (event is PointerPanZoomStartEvent || event is PointerPanZoomUpdateEvent || event is PointerPanZoomEndEvent) {
+    if (event is PointerPanZoomStartEvent ||
+        event is PointerPanZoomUpdateEvent ||
+        event is PointerPanZoomEndEvent) {
       _clearTapCandidate();
       return;
     }
@@ -426,9 +441,18 @@ class RenderCanvasMarkerLayer extends RenderBox {
     // Try the last hit marker first.
     // Why: User interactions often repeatedly hit the same (or nearby) marker.
     // This short-circuits the full scan in common cases.
-    if (_lastSelectedMarkerIndex != null && _lastSelectedMarkerIndex! >= 0 && _lastSelectedMarkerIndex! < markers.length) {
+    if (_lastSelectedMarkerIndex != null &&
+        _lastSelectedMarkerIndex! >= 0 &&
+        _lastSelectedMarkerIndex! < markers.length) {
       final marker = markers[_lastSelectedMarkerIndex!];
-      if (_isMarkerHit(marker, _lastSelectedMarkerIndex!, hitScreenOffset, zoom, rotation, isMapRotated)) {
+      if (_isMarkerHit(
+        marker,
+        _lastSelectedMarkerIndex!,
+        hitScreenOffset,
+        zoom,
+        rotation,
+        isMapRotated,
+      )) {
         return _lastSelectedMarkerIndex;
       }
     }
@@ -437,7 +461,14 @@ class RenderCanvasMarkerLayer extends RenderBox {
     // Why: Painting order means later markers appear "on top"; iterating from
     // the end yields expected hit behavior for overlapping markers.
     for (int i = markers.length - 1; i >= 0; i--) {
-      if (_isMarkerHit(markers[i], i, hitScreenOffset, zoom, rotation, isMapRotated)) {
+      if (_isMarkerHit(
+        markers[i],
+        i,
+        hitScreenOffset,
+        zoom,
+        rotation,
+        isMapRotated,
+      )) {
         _lastSelectedMarkerIndex = i;
         return i;
       }
@@ -446,7 +477,14 @@ class RenderCanvasMarkerLayer extends RenderBox {
     return null;
   }
 
-  bool _isMarkerHit(CanvasMarker marker, int index, Offset hitScreenOffset, double zoom, double rotation, bool isMapRotated) {
+  bool _isMarkerHit(
+    CanvasMarker marker,
+    int index,
+    Offset hitScreenOffset,
+    double zoom,
+    double rotation,
+    bool isMapRotated,
+  ) {
     // Use getOffsetFromOrigin to match the coordinate space used in painting.
     // Why: Using the same projection function prevents subtle discrepancies
     // between what the user sees and what can be tapped.
@@ -468,10 +506,19 @@ class RenderCanvasMarkerLayer extends RenderBox {
       // space.
       final Matrix4 matrix = Matrix4.identity()
         ..translateByDouble(markerScreenOffset.dx, markerScreenOffset.dy, 0, 1)
-        ..rotateZ(rotation) // Forward rotation to match painter's backward rotation
-        ..translateByDouble(-markerScreenOffset.dx, -markerScreenOffset.dy, 0, 1);
+        ..rotateZ(
+          rotation,
+        ) // Forward rotation to match painter's backward rotation
+        ..translateByDouble(
+          -markerScreenOffset.dx,
+          -markerScreenOffset.dy,
+          0,
+          1,
+        );
 
-      final transformed = matrix.transform3(Vector3(hitScreenOffset.dx, hitScreenOffset.dy, 0));
+      final transformed = matrix.transform3(
+        Vector3(hitScreenOffset.dx, hitScreenOffset.dy, 0),
+      );
       return Offset(transformed.x, transformed.y);
     }
 

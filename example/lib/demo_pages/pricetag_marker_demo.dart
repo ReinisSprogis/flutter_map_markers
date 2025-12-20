@@ -30,27 +30,37 @@ class _PriceTagMarkerDemoState extends State<PriceTagMarkerDemo> {
     final london = LatLng(51.5074, -0.1278);
     for (int i = 0; i < count; i++) {
       // Random radial spread from city center
-      final LatLng markerPosition = Utility.clusterPoint(london, random,);
+      final LatLng markerPosition = Utility.clusterPoint(london, random);
+
       /// Generates a marker at the given position with the specified styles and behaviors.
-      final marker = _generateMarker(markerPosition, random.nextInt(5000) + 500);
+      final marker = _generateMarker(
+        markerPosition,
+        random.nextInt(5000) + 500,
+      );
       generatedMarkers.add(marker);
     }
 
     return generatedMarkers;
   }
 
-
   CanvasMarker _generateMarker(LatLng position, int price) {
     /// Marker created from preset text marker with price tag.
     /// You can check the implementation by ctrl+clicking on the method name and create your own custom version based on it.
-    return MarkerPresets.textMarker(position: position, zoomLevelTransition: 11, text: '£${price.toString()}',onTap: () {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Marker at (${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}) with price £$price tapped!'),
-          duration: Duration(seconds: 1),
-        ),
-      );  
-    });
+    return MarkerPresets.textMarker(
+      position: position,
+      zoomLevelTransition: 11,
+      text: '£${price.toString()}',
+      onTap: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Marker at (${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}) with price £$price tapped!',
+            ),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -59,9 +69,17 @@ class _PriceTagMarkerDemoState extends State<PriceTagMarkerDemo> {
       drawer: const AppDrawer(),
       appBar: AppBar(title: const Text('Simple Marker')),
       body: FlutterMap(
-        options: MapOptions(initialCenter: LatLng(51.5074, -0.1278), initialZoom: 10, maxZoom: 18, minZoom: 1),
+        options: MapOptions(
+          initialCenter: LatLng(51.5074, -0.1278),
+          initialZoom: 10,
+          maxZoom: 18,
+          minZoom: 1,
+        ),
         children: [
-          TileLayer(userAgentPackageName: 'com.flutter_map_markers.example', urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
+          TileLayer(
+            userAgentPackageName: 'com.flutter_map_markers.example',
+            urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          ),
           CanvasMarkerLayer(markers: markers, drawHitMarkerLast: true),
         ],
       ),

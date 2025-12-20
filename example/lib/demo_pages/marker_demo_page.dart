@@ -55,27 +55,48 @@ class _MarkerDemoPageState extends State<MarkerDemoPage> {
       final london = LatLng(51.5074, -0.1278);
 
       // This generates a random icon for the marker
-      final iconPainter = TextPainter(textAlign: TextAlign.center, textDirection: TextDirection.ltr);
+      final iconPainter = TextPainter(
+        textAlign: TextAlign.center,
+        textDirection: TextDirection.ltr,
+      );
       // Random position around London with clustering
       final LatLng pos = Utility.clusterPoint(london, random);
       // Get a random icon for the marker
       final markerIcon = Icon(getRandomMarkerIcon(random));
       iconPainter.text = TextSpan(
         text: String.fromCharCode(markerIcon.icon!.codePoint),
-        style: TextStyle(fontSize: 15, fontFamily: markerIcon.icon!.fontFamily, color: Colors.white),
+        style: TextStyle(
+          fontSize: 15,
+          fontFamily: markerIcon.icon!.fontFamily,
+          color: Colors.white,
+        ),
       );
       // Avoid layout call in the markers painter function for better performance.
       // Otherwise it would be called every frame during repaint.
       iconPainter.layout();
 
       // Random color for the marker fill
-      final Color color = Color.fromARGB(255, randomGenerator.nextInt(256), randomGenerator.nextInt(256), randomGenerator.nextInt(256));
+      final Color color = Color.fromARGB(
+        255,
+        randomGenerator.nextInt(256),
+        randomGenerator.nextInt(256),
+        randomGenerator.nextInt(256),
+      );
       final Paint taskPaint = Paint()
         ..color = color
         ..style = PaintingStyle.fill;
 
       /// Generates a marker at the given position with the specified styles and behaviors.
-      final marker = _generateMarker(pos, london, markerIcon, taskPaint, borderPaint, circlePaint, iconPainter, i);
+      final marker = _generateMarker(
+        pos,
+        london,
+        markerIcon,
+        taskPaint,
+        borderPaint,
+        circlePaint,
+        iconPainter,
+        i,
+      );
       generatedMarkers.add(marker);
     }
 
@@ -84,7 +105,16 @@ class _MarkerDemoPageState extends State<MarkerDemoPage> {
 
   /// Generate a CanvasMarker at the given position with the specified styles and behaviors.
   /// Separated into its own method for clarity.
-  CanvasMarker _generateMarker(LatLng pos, LatLng clusterLocation, Icon markerIcon, Paint taskPaint, Paint borderPaint, Paint circlePaint, TextPainter textPainter, int index) {
+  CanvasMarker _generateMarker(
+    LatLng pos,
+    LatLng clusterLocation,
+    Icon markerIcon,
+    Paint taskPaint,
+    Paint borderPaint,
+    Paint circlePaint,
+    TextPainter textPainter,
+    int index,
+  ) {
     final radius = 12.0;
     return CanvasMarker(
       rotate: true,
@@ -100,7 +130,12 @@ class _MarkerDemoPageState extends State<MarkerDemoPage> {
         // If not provided, the marker will be culled based on point position only.
         // In this case Marker size ratio is 2:3 (width:height).
         // And Rect constructed here to cover the whole marker area.
-        final bounds = Rect.fromLTRB(center.dx - radius, center.dy - radius * 3, center.dx + radius, center.dy);
+        final bounds = Rect.fromLTRB(
+          center.dx - radius,
+          center.dy - radius * 3,
+          center.dx + radius,
+          center.dy,
+        );
         return bounds;
       },
       hitArea: (center, metersToPixels, latLngToPixelOffset, zoomLevel) {
@@ -108,14 +143,18 @@ class _MarkerDemoPageState extends State<MarkerDemoPage> {
         // If you change your marker shape in the painter based on zoom level,
         // you probably want to change the hit area too.
         if (zoomLevel < 13) {
-          final circlePath = Path()..addOval(Rect.fromCircle(center: center, radius: 5));
+          final circlePath = Path()
+            ..addOval(Rect.fromCircle(center: center, radius: 5));
           return circlePath;
         }
         // Return the hit area Path for the marker.
         // This is used for hit testing taps and hovers. It uses path.contains to determine if a point is inside the hit area.
         // It allows for non-rectangular hit areas.
         // If it is not provided, a rectangular hit area based on the painter's returned Rect will be used.
-        final (path, _) = MarkerPresets.raindropMarkerPath(center, radius: radius);
+        final (path, _) = MarkerPresets.raindropMarkerPath(
+          center,
+          radius: radius,
+        );
         return path;
       },
       painter: (canvas, center, metersToPixels, latLngToPixelOffset, zoomLevel) {
@@ -127,21 +166,27 @@ class _MarkerDemoPageState extends State<MarkerDemoPage> {
           canvas.drawCircle(center, 5, borderPaint);
         } else {
           // The [center] is provided LatLng position converted to offset.
-        // In other words [center] is the pixel position of the marker on the canvas.
-        // For this example raindrop marker preset is used.
-        // The circular part of the raindrop is centered above the provided position.
-        // And the bottom tip of the raindrop is at the provided [center] position that points to the location.
-        final (path, markerCenterPosition) = MarkerPresets.raindropMarkerPath(center, radius: 12); // Create the raindrop marker path from preset.
-        canvas.drawPath(path, taskPaint); // Draws the filled part of the marker
-        canvas.drawPath(path, borderPaint); // Draws the border of the marker
+          // In other words [center] is the pixel position of the marker on the canvas.
+          // For this example raindrop marker preset is used.
+          // The circular part of the raindrop is centered above the provided position.
+          // And the bottom tip of the raindrop is at the provided [center] position that points to the location.
+          final (path, markerCenterPosition) = MarkerPresets.raindropMarkerPath(
+            center,
+            radius: 12,
+          ); // Create the raindrop marker path from preset.
+          canvas.drawPath(
+            path,
+            taskPaint,
+          ); // Draws the filled part of the marker
+          canvas.drawPath(path, borderPaint); // Draws the border of the marker
 
-        // Draw the icon at the center of the circular part of the raindrop.
-        canvas.drawCircle(markerCenterPosition, 10, circlePaint);
-        final iconOffset = markerCenterPosition - Offset(textPainter.width / 2, textPainter.height / 2);
-        textPainter.paint(canvas, iconOffset);
+          // Draw the icon at the center of the circular part of the raindrop.
+          canvas.drawCircle(markerCenterPosition, 10, circlePaint);
+          final iconOffset =
+              markerCenterPosition -
+              Offset(textPainter.width / 2, textPainter.height / 2);
+          textPainter.paint(canvas, iconOffset);
         }
-       
-        
       },
       onTap: () {
         //Show toast or dialog with info
@@ -153,7 +198,11 @@ class _MarkerDemoPageState extends State<MarkerDemoPage> {
               constraints: const BoxConstraints(maxWidth: 220, maxHeight: 300),
               child: Stack(
                 children: [
-                  InfoCard(title: 'Marker $index', content: markerIcon, index: index),
+                  InfoCard(
+                    title: 'Marker $index',
+                    content: markerIcon,
+                    index: index,
+                  ),
                   Positioned(
                     top: 5,
                     right: 5,
@@ -223,9 +272,18 @@ class _MarkerDemoPageState extends State<MarkerDemoPage> {
       body: Stack(
         children: [
           FlutterMap(
-            options: MapOptions(initialCenter: LatLng(51.5074, -0.1278), initialZoom: 10, maxZoom: 18, minZoom: 3),
+            options: MapOptions(
+              initialCenter: LatLng(51.5074, -0.1278),
+              initialZoom: 10,
+              maxZoom: 18,
+              minZoom: 3,
+            ),
             children: [
-              TileLayer(userAgentPackageName: 'com.flutter_map_markers.example', urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
+              TileLayer(
+                userAgentPackageName: 'com.flutter_map_markers.example',
+                urlTemplate:
+                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+              ),
               CanvasMarkerLayer(markers: markers),
             ],
           ),
@@ -240,14 +298,30 @@ class _MarkerDemoPageState extends State<MarkerDemoPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('Markers: ${markerCount.toInt()}', style: Theme.of(context).textTheme.titleMedium),
-                    Slider(value: markerCount, min: 100, max: 20000, divisions: 199, label: markerCount.toInt().toString(), onChanged: _debouncedRegenerateMarkers),
+                    Text(
+                      'Markers: ${markerCount.toInt()}',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Slider(
+                      value: markerCount,
+                      min: 100,
+                      max: 20000,
+                      divisions: 199,
+                      label: markerCount.toInt().toString(),
+                      onChanged: _debouncedRegenerateMarkers,
+                    ),
                   ],
                 ),
               ),
             ),
           ),
-           if (!kIsWeb && true) Positioned(bottom: 16, left: 0, right: 0, child: PerformanceOverlay.allEnabled()),
+          if (!kIsWeb && true)
+            Positioned(
+              bottom: 16,
+              left: 0,
+              right: 0,
+              child: PerformanceOverlay.allEnabled(),
+            ),
         ],
       ),
     );
@@ -259,7 +333,12 @@ class InfoCard extends StatelessWidget {
   final Icon content;
   final int index;
 
-  const InfoCard({super.key, required this.title, required this.content, required this.index});
+  const InfoCard({
+    super.key,
+    required this.title,
+    required this.content,
+    required this.index,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -272,13 +351,23 @@ class InfoCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Image.network('https://picsum.photos/seed/${index}/200', fit: BoxFit.cover, height: 200),
+            Image.network(
+              'https://picsum.photos/seed/${index}/200',
+              fit: BoxFit.cover,
+              height: 200,
+            ),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 content,
                 const SizedBox(width: 8),
-                Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
           ],

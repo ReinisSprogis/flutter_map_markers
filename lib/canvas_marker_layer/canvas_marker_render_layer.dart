@@ -37,7 +37,10 @@ class CanvasMarkerRenderLayer extends LeafRenderObjectWidget {
   }
 
   @override
-  void updateRenderObject(BuildContext context, RenderCanvasMarkerLayer renderObject) {
+  void updateRenderObject(
+    BuildContext context,
+    RenderCanvasMarkerLayer renderObject,
+  ) {
     renderObject
       ..markers = markers
       ..camera = camera
