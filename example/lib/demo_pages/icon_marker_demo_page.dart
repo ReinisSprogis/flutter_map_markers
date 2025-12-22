@@ -1,13 +1,12 @@
 import 'dart:math';
 
-import 'package:example/app_drawer.dart';
-import 'package:example/utility/utility.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/canvas_marker_layer/canvas_marker.dart';
 import 'package:flutter_map_markers/canvas_marker_layer/canvas_marker_layer.dart';
 import 'package:flutter_map_markers/marker_presets/marker_presets.dart';
+import 'package:flutter_map_markers_example/app_drawer.dart';
+import 'package:flutter_map_markers_example/utility/utility.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 
 class IconMarkerDemoPage extends StatefulWidget {
@@ -71,16 +70,16 @@ class _IconMarkerDemoPageState extends State<IconMarkerDemoPage> {
                 urlTemplate:
                     'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
               ),
-              CanvasMarkerLayer(markers: markers, drawHitMarkerLast: true),
+              CanvasMarkerLayer(markers: markers, showDebugRect: true,),
             ],
           ),
-          if (!kIsWeb && true)
-            Positioned(
-              bottom: 16,
-              left: 0,
-              right: 0,
-              child: PerformanceOverlay.allEnabled(),
-            ),
+          // if (!kIsWeb && true)
+          //   Positioned(
+          //     bottom: 16,
+          //     left: 0,
+          //     right: 0,
+          //     child: PerformanceOverlay.allEnabled(),
+          //   ),
           Align(
             alignment: Alignment.topCenter,
             child: Column(
@@ -100,13 +99,6 @@ class _IconMarkerDemoPageState extends State<IconMarkerDemoPage> {
                         _generateMarkers(sliderValue);
                       });
                     },
-                  ),
-                ),
-                Container(
-                  color: Colors.white70,
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    'Tap on the map to add more markers. Total markers: ${markers.length}',
                   ),
                 ),
               ],
