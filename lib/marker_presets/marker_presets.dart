@@ -176,6 +176,11 @@ class MarkerPresets {
     return CanvasMarker(
       rotate: rotate,
       position: position,
+      size: (center, metersToPixels, latLngToPixelOffset, zoomLevel) {
+        // Ensure the size encompasses the entire raindrop
+        final Rect bounds = Rect.fromLTRB(center.dx - radius, center.dy - radius * 3, center.dx + radius, center.dy);
+        return bounds;
+      },
       hitArea: (center, metersToPixels, latLngToPixelOffset, zoomLevel) {
         final (path, _) = MarkerPresets.raindropMarkerPath(
           center,
@@ -294,26 +299,36 @@ class MarkerPresets {
     }
 
     return CanvasMarker(
-      rotate: true,
+      rotate: rotate,
       position: position,
-      hitArea: onTap != null
-          ? (center, metersToPixels, latLngToPixelOffset, zoomLevel) {
-              // Return a simple circle hit area below the zoom level transition
-              if (zoomLevelTransition != null &&
-                  zoomLevel < zoomLevelTransition) {
-                return Path()
-                  ..addOval(Rect.fromCircle(center: center, radius: 5));
-              }
-              // Return the full marker path otherwise
-              Path markerPath = createMarkerPath(
-                center,
-                width,
-                height,
-                cornerRadius,
-              );
-              return markerPath;
-            }
-          : null,
+      size: (center, metersToPixels, latLngToPixelOffset, zoomLevel) {
+        // Ensure the size encompasses the entire marker
+        final Rect bounds = Rect.fromLTRB(
+          center.dx - width / 2,
+          center.dy - height,
+          center.dx + width / 2,
+          center.dy,
+        );
+        return bounds;
+      },
+      // hitArea: onTap != null
+      //     ? (center, metersToPixels, latLngToPixelOffset, zoomLevel) {
+      //         // Return a simple circle hit area below the zoom level transition
+      //         if (zoomLevelTransition != null &&
+      //             zoomLevel < zoomLevelTransition) {
+      //           return Path()
+      //             ..addOval(Rect.fromCircle(center: center, radius: 5));
+      //         }
+      //         // Return the full marker path otherwise
+      //         Path markerPath = createMarkerPath(
+      //           center,
+      //           width,
+      //           height,
+      //           cornerRadius,
+      //         );
+      //         return markerPath;
+      //       }
+      //     : null,
       painter:
           (canvas, center, metersToPixels, latLngToPixelOffset, zoomLevel) {
             // Draw a simple circle below the zoom level transition
@@ -321,8 +336,8 @@ class MarkerPresets {
                 zoomLevel < zoomLevelTransition) {
               canvas.drawCircle(center, 5, fillPaint);
               canvas.drawCircle(center, 5, borderPaint);
-            }
-            // Draw the full marker otherwise
+            } else {
+               // Draw the full marker otherwise
             Path markerPath = createMarkerPath(
               center,
               width,
@@ -339,6 +354,8 @@ class MarkerPresets {
                   (height + 5) / 2 + textPainter.height / 2,
                 );
             textPainter.paint(canvas, textOffset);
+            }
+           
           },
       onTap: onTap,
     );
@@ -395,7 +412,7 @@ class MarkerPresets {
       final topLeft = topLeftFromAlignment(center);
       return Rect.fromLTWH(
         topLeft.dx,
-        topLeft.dy,
+        topLeft.dy - baseline / 2,
         textPainter.width,
         textPainter.height,
       );
