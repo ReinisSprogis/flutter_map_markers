@@ -1,9 +1,9 @@
 <div align="center">
   <h1>Flutter Map Markers</h1>
   
-  <img src="screenshots/asset_one.png" alt="Flutter Map Markers example screenshot" width="100%"/>
+  <img src="https://github.com/ReinisSprogis/flutter_map_markers/raw/main/screenshots/asset_one.png" alt="Flutter Map Markers example screenshot" width="100%"/>
   
-  <img src="screenshots/asset_two.png" alt="Flutter Map Markers example screenshot" width="100%"/>
+  <img src="https://github.com/ReinisSprogis/flutter_map_markers/raw/main/screenshots/asset_two.png" alt="Flutter Map Markers example screenshot" width="100%"/>
   
   <p>Canvas based marker rendering for <a href="https://pub.dev/packages/flutter_map">flutter_map</a></p>
 </div>
