@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:example/app_drawer.dart';
-import 'package:example/utility/utility.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/flutter_map_markers.dart';
+import 'package:flutter_map_markers_example/app_drawer.dart';
+import 'package:flutter_map_markers_example/utility/utility.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 
 /// Demonstration of a large number of markers with random icons and clustering around London.
@@ -315,13 +315,13 @@ class _MarkerDemoPageState extends State<MarkerDemoPage> {
               ),
             ),
           ),
-          if (!kIsWeb && true)
-            Positioned(
-              bottom: 16,
-              left: 0,
-              right: 0,
-              child: PerformanceOverlay.allEnabled(),
-            ),
+          // if (!kIsWeb && true)
+          //   Positioned(
+          //     bottom: 16,
+          //     left: 0,
+          //     right: 0,
+          //     child: PerformanceOverlay.allEnabled(),
+          //   ),
         ],
       ),
     );
