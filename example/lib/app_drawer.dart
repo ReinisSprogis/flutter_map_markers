@@ -1,5 +1,6 @@
 import 'package:example/demo_pages/animated_marker_demo_page.dart';
 import 'package:example/demo_pages/ball_marker_demo_page.dart';
+import 'package:example/demo_pages/circles_demo_page.dart';
 import 'package:example/demo_pages/icon_marker_demo_page.dart';
 import 'package:example/demo_pages/lat_long_to_offset_demo_page.dart';
 import 'package:example/demo_pages/marker_demo_page.dart';
@@ -115,6 +116,18 @@ class AppDrawer extends StatelessWidget {
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
                   builder: (context) => const IconMarkerDemoPage(),
+                ),
+              );
+            },
+          ),
+                    ListTile(
+            leading: const Icon(Icons.circle),
+            title: const Text('Circles'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => const CirclesDemoPage(),
                 ),
               );
             },
