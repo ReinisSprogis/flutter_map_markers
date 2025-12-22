@@ -16,6 +16,9 @@
   <code>flutter_map_markers</code> is a plugin for <a href="https://pub.dev/packages/flutter_map">flutter_map</a> package that provides a flexible canvas based marker layer. It enables you to render interactive markers directly on the map using Canvas.
 </p>
 
+<strong>This is the initial release. There might be bugs or missing features. Use with caution in production. Please report any issues or feature requests you have and give feedback on your experience.</strong>
+<p>If you find this useful, consider supporting <a href="https://github.com/sponsors/ReinisSprogis">me</a>.</p>
+
 <h2>Features</h2>
 
 <ul>
@@ -348,6 +351,3 @@ Rect Function(
 <p>
   Check out the complete example in the <code>example/</code> folder, which demonstrates:
 </p>
-
-<h2>Disclaimer</h2>
-<p>This is the initial release. Please report any issues or feature requests you have and give feedback on your experience.</p>
