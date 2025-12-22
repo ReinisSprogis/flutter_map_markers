@@ -1,10 +1,10 @@
 import 'dart:math';
 
-import 'package:example/app_drawer.dart';
-import 'package:example/utility/utility.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/flutter_map_markers.dart';
+import 'package:flutter_map_markers_example/app_drawer.dart';
+import 'package:flutter_map_markers_example/utility/utility.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 
 /// Demonstration of simple markers with price tags clustered around London.
@@ -33,10 +33,7 @@ class _PriceTagMarkerDemoState extends State<PriceTagMarkerDemo> {
       final LatLng markerPosition = Utility.clusterPoint(london, random);
 
       /// Generates a marker at the given position with the specified styles and behaviors.
-      final marker = _generateMarker(
-        markerPosition,
-        random.nextInt(5000) + 500,
-      );
+      final marker = _generateMarker(markerPosition, random.nextInt(5000) + 500);
       generatedMarkers.add(marker);
     }
 
@@ -53,9 +50,7 @@ class _PriceTagMarkerDemoState extends State<PriceTagMarkerDemo> {
       onTap: () {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Marker at (${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}) with price £$price tapped!',
-            ),
+            content: Text('Marker at (${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}) with price £$price tapped!'),
             duration: Duration(seconds: 1),
           ),
         );
@@ -67,20 +62,12 @@ class _PriceTagMarkerDemoState extends State<PriceTagMarkerDemo> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const AppDrawer(),
-      appBar: AppBar(title: const Text('Simple Marker')),
+      appBar: AppBar(title: const Text('Price tag Marker')),
       body: FlutterMap(
-        options: MapOptions(
-          initialCenter: LatLng(51.5074, -0.1278),
-          initialZoom: 10,
-          maxZoom: 18,
-          minZoom: 1,
-        ),
+        options: MapOptions(initialCenter: LatLng(51.5074, -0.1278), initialZoom: 10, maxZoom: 18, minZoom: 1),
         children: [
-          TileLayer(
-            userAgentPackageName: 'com.flutter_map_markers.example',
-            urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          ),
-          CanvasMarkerLayer(markers: markers, drawHitMarkerLast: true),
+          TileLayer(userAgentPackageName: 'com.flutter_map_markers.example', urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
+          CanvasMarkerLayer(markers: markers),
         ],
       ),
     );
