@@ -39,7 +39,7 @@
 
 ```yaml
 dependencies:
-  flutter_map_markers: ^0.1.0
+  flutter_map_markers: ^0.1.1
   flutter_map: add latest version
   latlong2: add latest version
 ```
