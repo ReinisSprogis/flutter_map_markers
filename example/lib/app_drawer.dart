@@ -1,13 +1,13 @@
-import 'package:example/demo_pages/animated_marker_demo_page.dart';
-import 'package:example/demo_pages/ball_marker_demo_page.dart';
-import 'package:example/demo_pages/circles_demo_page.dart';
-import 'package:example/demo_pages/icon_marker_demo_page.dart';
-import 'package:example/demo_pages/lat_long_to_offset_demo_page.dart';
-import 'package:example/demo_pages/marker_demo_page.dart';
-import 'package:example/demo_pages/meters_to_pixels_demo_page.dart';
-import 'package:example/demo_pages/simple_marker_demo_page.dart';
-import 'package:example/demo_pages/pricetag_marker_demo.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map_markers_example/demo_pages/animated_marker_demo_page.dart';
+import 'package:flutter_map_markers_example/demo_pages/ball_marker_demo_page.dart';
+import 'package:flutter_map_markers_example/demo_pages/circles_demo_page.dart';
+import 'package:flutter_map_markers_example/demo_pages/icon_marker_demo_page.dart';
+import 'package:flutter_map_markers_example/demo_pages/lat_long_to_offset_demo_page.dart';
+import 'package:flutter_map_markers_example/demo_pages/marker_demo_page.dart';
+import 'package:flutter_map_markers_example/demo_pages/meters_to_pixels_demo_page.dart';
+import 'package:flutter_map_markers_example/demo_pages/pricetag_marker_demo.dart';
+import 'package:flutter_map_markers_example/demo_pages/simple_marker_demo_page.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
