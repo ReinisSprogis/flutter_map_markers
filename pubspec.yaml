@@ -2,7 +2,10 @@ name: flutter_map_markers
 description: "Plugin for flutter_map to draw markers on map using canvas API with created presets."
 version: 0.1.0
 repository: https://github.com/ReinisSprogis/flutter_map_markers
-
+issue_tracker: https://github.com/ReinisSprogis/flutter_map_markers/issues
+funding:
+  - https://github.com/sponsors/ReinisSprogis
+  
 topics:
   - flutter-map
   - map
@@ -34,3 +37,9 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+
+screenshots:
+  - description: 'This screenshot demonstrates the marker rendering on the map.'
+    path: screenshots/asset_one.png
+  - description: 'This screenshot demonstrates the marker rendering on the map.'
+    path: screenshots/asset_two.png
