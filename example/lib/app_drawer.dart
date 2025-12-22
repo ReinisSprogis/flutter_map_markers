@@ -109,7 +109,7 @@ class AppDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.bubble_chart),
+            leading: const Icon(Icons.location_pin),
             title: const Text('Icon Marker'),
             onTap: () {
               Navigator.pop(context);
