@@ -48,26 +48,26 @@ class RenderCanvasMarkerLayer extends RenderBox {
 
   /// Active pointers currently down.
   ///
-  /// Why: We need to detect multi-touch sequences (pinch/rotate). A gesture
+  ///  We need to detect multi-touch sequences (pinch/rotate). A gesture
   /// that starts on a marker and later becomes multi-touch must never be
   /// treated as a marker tap.
   final Set<int> _activePointers = <int>{};
 
   /// The pointer that started a potential marker tap.
   ///
-  /// Why: Tap recognition is per-pointer. We only consider the *first* pointer
+  ///  Tap recognition is per-pointer. We only consider the *first* pointer
   /// for a tap candidate; any additional pointer disqualifies the tap.
   int? _tapCandidatePointer;
 
   /// The marker index that was hit on pointer down.
   ///
-  /// Why: We want "tap down on marker" + "tap up on same marker" semantics.
+  ///  We want "tap down on marker" + "tap up on same marker" semantics.
   /// This avoids firing on tap-up over a different marker after a drag.
   int? _tapCandidateMarkerIndex;
 
   /// Whether the tap sequence involved multi-touch at any time.
   ///
-  /// Why: TapGestureRecognizer can lose to pan/scale in the arena, but we
+  ///  TapGestureRecognizer can lose to pan/scale in the arena, but we
   /// additionally guard against platform differences and unusual sequences
   /// where multi-touch may not cancel the recognizer the way we expect.
   bool _tapCandidateHadMultiTouch = false;
@@ -84,7 +84,7 @@ class RenderCanvasMarkerLayer extends RenderBox {
 
   /// Recognizes taps for markers.
   ///
-  /// Why: We participate in the gesture arena for true marker hits so that
+  ///  We participate in the gesture arena for true marker hits so that
   /// FlutterMap's tap handlers do not fire when the marker tap wins.
   ///
   /// Note: We only add a pointer to this recognizer when a marker was hit on
@@ -122,7 +122,7 @@ class RenderCanvasMarkerLayer extends RenderBox {
 
   /// Clears the current tap candidate state.
   ///
-  /// Why: This is called on successful taps, cancels, pan-zoom gestures, and
+  ///  This is called on successful taps, cancels, pan-zoom gestures, and
   /// other sequences where a tap can no longer be valid.
   void _clearTapCandidate() {
     _tapCandidatePointer = null;
@@ -228,7 +228,7 @@ class RenderCanvasMarkerLayer extends RenderBox {
     );
 
     // Padding is used to reduce pop-in at the edges when the user pans.
-    // Why: markers are often larger than a point and may still be visible when
+    //  markers are often larger than a point and may still be visible when
     // their anchor position is just outside the viewport.
     const double screenPadding = 0.0;
     CanvasMarker? selectedMarker;
@@ -237,7 +237,7 @@ class RenderCanvasMarkerLayer extends RenderBox {
       final marker = markers[i];
 
       // Skip the selected marker to draw it last.
-      // Why: This provides a deterministic "bring to front" effect for the
+      //  This provides a deterministic "bring to front" effect for the
       // most recently interacted marker without having to reorder the list.
       if (lastSelectedMarkerIndex == i) {
         selectedMarker = marker;
@@ -272,14 +272,14 @@ class RenderCanvasMarkerLayer extends RenderBox {
       }
 
       // Cull markers outside visible area.
-      // Why: Painters can be expensive; skipping off-screen markers is a
+      //  Painters can be expensive; skipping off-screen markers is a
       // significant performance win for large marker sets.
 
       _paintMarker(canvas, marker, screenOffset, size);
     }
 
     // Draw selected marker last (on top).
-    // Why: makes the last-hit marker visually prominent and ensures it
+    //  makes the last-hit marker visually prominent and ensures it
     // receives hit priority when overlapping.
     if (selectedMarker != null) {
       final screenOffset = camera.getOffsetFromOrigin(selectedMarker.position);
@@ -301,13 +301,14 @@ class RenderCanvasMarkerLayer extends RenderBox {
 
     if (shouldRotate) {
       // Only rotate the visual marker, not its anchor position.
-      // Why: Users expect the marker to stay upright while the map rotates.
+      //  Users expect the marker to stay upright while the map rotates.
       canvas.translate(screenOffset.dx, screenOffset.dy);
       canvas.rotate(-camera.rotationRad);
       canvas.translate(-screenOffset.dx, -screenOffset.dy);
     }
-
-    final rect = marker.painter(
+    
+    // Paint the marker.
+    marker.painter(
       canvas,
       screenOffset,
       (meters, latLong) => _metersToPixels(latLong, meters),
@@ -321,7 +322,10 @@ class RenderCanvasMarkerLayer extends RenderBox {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.0;
 
-      // canvas.drawRect(marker.size(), debugPaint);
+       canvas.drawRect(marker.size!(screenOffset,
+        (meters, latLong) => _metersToPixels(latLong, meters),
+        (latLng, {referencePoint}) => camera.getOffsetFromOrigin(latLng),
+        camera.zoom.ceil()), debugPaint);
     }
 
     if (paintDebugHitArea && marker.hitArea != null) {
@@ -366,7 +370,7 @@ class RenderCanvasMarkerLayer extends RenderBox {
   @override
   void handleEvent(PointerEvent event, covariant BoxHitTestEntry entry) {
     // Desktop trackpad pan/zoom (and some platforms) emit pan-zoom events.
-    // Why: these represent scrolling/zooming intent and should never trigger
+    //  these represent scrolling/zooming intent and should never trigger
     // marker taps even if they begin over a marker.
     if (event is PointerPanZoomStartEvent ||
         event is PointerPanZoomUpdateEvent ||
@@ -391,7 +395,7 @@ class RenderCanvasMarkerLayer extends RenderBox {
 
       // Only start a tap recognizer for the first pointer.
       //
-      // Why:
+      // 
       // - Taps are single-pointer gestures.
       // - If multi-touch happens later (pinch/rotate), the recognizer will be
       //   cancelled by the arena and we also guard via
@@ -407,7 +411,7 @@ class RenderCanvasMarkerLayer extends RenderBox {
 
       // Participate in the gesture arena.
       //
-      // Why: This prevents FlutterMap's onTap from firing when the marker tap
+      //  This prevents FlutterMap's onTap from firing when the marker tap
       // wins, but will naturally lose to pan/scale gestures.
       _tapGestureRecognizer.addPointer(event);
       return;
@@ -415,7 +419,7 @@ class RenderCanvasMarkerLayer extends RenderBox {
 
     if (event is PointerMoveEvent) {
       // No-op.
-      // Why: TapGestureRecognizer handles movement thresholds and cancellation.
+      //  TapGestureRecognizer handles movement thresholds and cancellation.
       return;
     }
 
@@ -439,7 +443,7 @@ class RenderCanvasMarkerLayer extends RenderBox {
     final isMapRotated = rotation != 0;
 
     // Try the last hit marker first.
-    // Why: User interactions often repeatedly hit the same (or nearby) marker.
+    //  User interactions often repeatedly hit the same (or nearby) marker.
     // This short-circuits the full scan in common cases.
     if (_lastSelectedMarkerIndex != null &&
         _lastSelectedMarkerIndex! >= 0 &&
@@ -458,7 +462,7 @@ class RenderCanvasMarkerLayer extends RenderBox {
     }
 
     // Search all markers from top to bottom.
-    // Why: Painting order means later markers appear "on top"; iterating from
+    //  Painting order means later markers appear "on top"; iterating from
     // the end yields expected hit behavior for overlapping markers.
     for (int i = markers.length - 1; i >= 0; i--) {
       if (_isMarkerHit(
@@ -486,12 +490,12 @@ class RenderCanvasMarkerLayer extends RenderBox {
     bool isMapRotated,
   ) {
     // Use getOffsetFromOrigin to match the coordinate space used in painting.
-    // Why: Using the same projection function prevents subtle discrepancies
+    //  Using the same projection function prevents subtle discrepancies
     // between what the user sees and what can be tapped.
     final markerScreenOffset = camera.getOffsetFromOrigin(marker.position);
 
     // When marker.rotate = true, the painter rotates the canvas backward.
-    // Why: this keeps the marker upright relative to the screen.
+    //  this keeps the marker upright relative to the screen.
     //
     // Hit testing must rotate the pointer position forward by the same amount
     // to keep the hit target aligned with the painted marker.
@@ -525,7 +529,7 @@ class RenderCanvasMarkerLayer extends RenderBox {
     final effectiveHitPoint = getEffectiveHitPoint();
 
     // --- HitArea Path ---
-    // Why: Some markers have non-rectangular tappable areas (e.g. pin shapes).
+    //  Some markers have non-rectangular tappable areas (e.g. pin shapes).
     if (marker.hitArea != null) {
       Path hitPath = marker.hitArea!(
         markerScreenOffset,
@@ -537,22 +541,19 @@ class RenderCanvasMarkerLayer extends RenderBox {
       if (hitPath.contains(effectiveHitPoint)) {
         return true;
       }
-    }
-    // --- Fallback Rect ---
-    // Why: For simple markers, computing the bounds via the painter is a
-    // convenient fallback, and keeps hit testing consistent with visuals.
-    else {
-      // final Rect bounds = marker.painter(
-      //   NoOpCanvas(),
-      //   markerScreenOffset,
-      //   (meters, latLong) => _metersToPixels(latLong, meters),
-      //   (ll, {referencePoint}) => camera.getOffsetFromOrigin(ll),
-      //   zoom.ceil(),
-      // );
+    } else if (marker.size != null) {
+      // --- Size Rect ---
+      //  Markers can specify a rectangular hit area via the size callback.
+      final Rect bounds = marker.size!(
+        markerScreenOffset,
+        (meters, latLong) => _metersToPixels(latLong, meters),
+        (ll, {referencePoint}) => camera.getOffsetFromOrigin(ll),
+        zoom.ceil(),
+      );
 
-      // if (bounds.contains(effectiveHitPoint)) {
-      //   return true;
-      // }
+      if (bounds.contains(effectiveHitPoint)) {
+        return true;
+      }
     }
 
     return false;
