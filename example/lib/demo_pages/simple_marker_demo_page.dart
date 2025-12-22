@@ -1,9 +1,9 @@
-import 'package:example/app_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/canvas_marker_layer/canvas_marker.dart';
 import 'package:flutter_map_markers/canvas_marker_layer/canvas_marker_layer.dart';
 import 'package:flutter_map_markers/marker_presets/marker_presets.dart';
+import 'package:flutter_map_markers_example/app_drawer.dart';
 import 'package:latlong2/latlong.dart';
 
 /// Demonstration of simple markers that can be added by tapping on the map.
@@ -29,16 +29,6 @@ class _SimpleMarkerDemoPageState extends State<SimpleMarkerDemoPage> {
     return MarkerPresets.raindropMarker(
       position: position,
       radius: 12,
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Marker at (${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}) tapped!',
-            ),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      },
     );
   }
 
@@ -67,7 +57,7 @@ class _SimpleMarkerDemoPageState extends State<SimpleMarkerDemoPage> {
                 urlTemplate:
                     'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
               ),
-              CanvasMarkerLayer(markers: markers, drawHitMarkerLast: true),
+              CanvasMarkerLayer(markers: markers),
             ],
           ),
           Align(
