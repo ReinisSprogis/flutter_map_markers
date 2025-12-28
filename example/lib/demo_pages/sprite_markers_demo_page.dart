@@ -32,22 +32,11 @@ class _SpriteMarkersDemoPageState extends State<SpriteMarkersDemoPage> {
         setState(() {});
       });
     });
-    final london = LatLng(51.5074, -0.1278);
-    final Random random = Random(42);
-    _markers = List<SpriteMarker>.generate(markerCount, (index) {
-      final position = Utility.clusterPoint(london, random);
-      return SpriteMarker(
-        rotate: true,
-        position: position,
-        spriteIndex:
-            index %
-            2, // Only use sprite indices 0 and 1 (assuming 2 sprites in atlas)
-      );
-    });
+    _generateSprites(1000);
   }
 
   Future<void> _loadAssetImage() async {
-    final ByteData data = await rootBundle.load('assets/sun_and_marker.png');
+    final ByteData data = await rootBundle.load('assets/circles_16x10.png');
     final Uint8List bytes = data.buffer.asUint8List();
     final ui.Codec codec = await ui.instantiateImageCodec(bytes);
     final ui.FrameInfo frameInfo = await codec.getNextFrame();
@@ -55,9 +44,9 @@ class _SpriteMarkersDemoPageState extends State<SpriteMarkersDemoPage> {
       // Create a horizontal sprite atlas with 2 sprites of 64x64 each
       _spriteAtlas = SpriteAtlas.horizontal(
         image: frameInfo.image,
-        spriteCount: 2,
-        spriteWidth: 64,
-        spriteHeight: 64,
+        spriteCount: 10,
+        spriteWidth: 16,
+        spriteHeight: 16,
       );
     });
   }
@@ -67,12 +56,12 @@ class _SpriteMarkersDemoPageState extends State<SpriteMarkersDemoPage> {
     final Random random = Random(42);
     setState(() {
       _markers = List<SpriteMarker>.generate(count, (index) {
-        final position = Utility.clusterPoint(london, random);
+        final position = Utility.clusterPoint(london, random,maxDistance: 10.0);
         return SpriteMarker(
-          rotate: true,
+          rotate: false,
           position: position,
           spriteIndex:
-              index % 2,
+              index % 10,
         );
       });
       markerCount = count;
