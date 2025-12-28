@@ -28,3 +28,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/sun_cloud_64.png
+    - assets/sun_and_marker.png
