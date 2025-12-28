@@ -3,7 +3,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_marker.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/sprite_atlas.dart';
@@ -28,6 +27,16 @@ class RenderSpriteMarkerLayer extends RenderBox {
   /// Whether the tap sequence involved multi-touch at any time.
   bool _tapCandidateHadMultiTouch = false;
 
+   RenderSpriteMarkerLayer({
+    required SpriteAtlas spriteAtlas,
+    required List<SpriteMarker> markers,
+    required MapCamera camera,
+    bool cullMarkers = true,
+  }) : _spriteAtlas = spriteAtlas,
+       _markers = markers,
+       _camera = camera,
+       _cullMarkers = cullMarkers;
+
   /// Recognizes taps for markers.
   late final TapGestureRecognizer _tapGestureRecognizer =
       TapGestureRecognizer(debugOwner: this)
@@ -46,15 +55,7 @@ class RenderSpriteMarkerLayer extends RenderBox {
           _clearTapCandidate();
         };
 
-  RenderSpriteMarkerLayer({
-    required SpriteAtlas spriteAtlas,
-    required List<SpriteMarker> markers,
-    required MapCamera camera,
-    bool cullMarkers = true,
-  }) : _spriteAtlas = spriteAtlas,
-       _markers = markers,
-       _camera = camera,
-       _cullMarkers = cullMarkers;
+ 
 
   SpriteAtlas get spriteAtlas => _spriteAtlas;
   set spriteAtlas(SpriteAtlas value) {
@@ -121,90 +122,111 @@ class RenderSpriteMarkerLayer extends RenderBox {
 
   /// Draws all visible sprites using the efficient drawRawAtlas method.
   void _drawSpritesUsingAtlas(
-    Canvas canvas,
-    List<SpriteMarker> visibleMarkers,
-    Offset offset,
-  ) {
-    final int markerCount = visibleMarkers.length;
+  Canvas canvas,
+  List<SpriteMarker> visibleMarkers,
+  Offset offset,
+) {
+  final int markerCount = visibleMarkers.length;
 
-    // Prepare data for drawRawAtlas
-    final Float32List rectList = Float32List(markerCount * 4);
-    final Float32List transformList = Float32List(markerCount * 4);
-    final Int32List colorList = Int32List(markerCount);
+  // Preallocate maximum possible size
+  final Float32List rectList = Float32List(markerCount * 4);
+  final Float32List transformList = Float32List(markerCount * 4);
 
-    for (int i = 0; i < markerCount; i++) {
-      final SpriteMarker marker = visibleMarkers[i];
-      // Use getOffsetFromOrigin to get screen coordinates
-      final Offset screenOffset = _camera.getOffsetFromOrigin(marker.position);
+  int writeIndex = 0;
 
-      // Get sprite info from atlas
-      final SpriteInfo spriteInfo = _spriteAtlas.getSpriteInfo(
-        marker.spriteIndex,
-      );
+  for (int i = 0; i < markerCount; i++) {
+    final SpriteMarker marker = visibleMarkers[i];
 
-      // Define source rectangle in sprite atlas
-      rectList[i * 4 + 0] = spriteInfo.x;
-      rectList[i * 4 + 1] = spriteInfo.y;
-      rectList[i * 4 + 2] = spriteInfo.x + spriteInfo.width;
-      rectList[i * 4 + 3] = spriteInfo.y + spriteInfo.height;
+    // Convert world → screen
+    final Offset screenOffset =
+        _camera.getOffsetFromOrigin(marker.position);
 
-      // Calculate rotation
-      // MobileLayerTransformer rotates the canvas by rotationRad (Clockwise).
-      // If marker.rotate is true (Stay Upright), we must counter-rotate by rotationRad (Counter-Clockwise).
-      // RSTransform rotation is Counter-Clockwise.
-      // So we add rotationRad.
-      double totalRotation = marker.rotation;
-      if (marker.rotate) {
-        totalRotation -= _camera.rotationRad;
-      }
+    if (!screenOffset.dx.isFinite || !screenOffset.dy.isFinite) continue;
 
-      // RSTransform handles the translate-rotate-translate automatically:
-      // 1. Translates to the anchor point (center of sprite)
-      // 2. Applies rotation around that point
-      // 3. Translates to the final position
-      final RSTransform transform = RSTransform.fromComponents(
-        rotation: totalRotation,
-        scale: marker.scale,
-        anchorX: spriteInfo.width / 2.0,
-        anchorY: spriteInfo.height / 2.0,
-        translateX: screenOffset.dx,
-        translateY: screenOffset.dy,
-      );
+    final SpriteInfo spriteInfo =
+        _spriteAtlas.getSpriteInfo(marker.spriteIndex);
 
-      transformList[i * 4 + 0] = transform.scos;
-      transformList[i * 4 + 1] = transform.ssin;
-      transformList[i * 4 + 2] = transform.tx;
-      transformList[i * 4 + 3] = transform.ty;
+    if (spriteInfo.width <= 0 || spriteInfo.height <= 0) continue;
 
-      // Handle color and alpha
-      if (marker.color == Colors.transparent) {
-        // For transparent color, use only alpha without color tinting
-        colorList[i] = marker.alpha << 24;
-      } else {
-        // Combine marker alpha with the marker's base color
-        colorList[i] = (marker.alpha << 24) | (marker.color.value & 0x00FFFFFF);
-      }
+    double totalRotation = marker.rotation;
+    if (marker.rotate) {
+      totalRotation -= _camera.rotationRad;
     }
 
-    final Paint paint = Paint();
-    // Use null for colors if all markers are transparent to preserve original sprite colors
-    final bool hasColorTinting = visibleMarkers.any(
-      (m) => m.color != Colors.transparent,
+    if (!totalRotation.isFinite) continue;
+
+    final double scale = marker.scale;
+    if (scale <= 0) continue;
+
+    final double dx = screenOffset.dx + offset.dx;
+    final double dy = screenOffset.dy + offset.dy;
+
+    if (!dx.isFinite || !dy.isFinite) continue;
+
+    final RSTransform transform = RSTransform.fromComponents(
+      rotation: totalRotation,
+      scale: scale,
+      anchorX: spriteInfo.width * 0.5,
+      anchorY: spriteInfo.height * 0.5,
+      translateX: dx,
+      translateY: dy,
     );
 
-    canvas.save();
-    canvas.translate(offset.dx, offset.dy);
+    final int t = writeIndex * 4;
+
+    transformList[t + 0] = transform.scos;
+    transformList[t + 1] = transform.ssin;
+    transformList[t + 2] = transform.tx;
+    transformList[t + 3] = transform.ty;
+
+    rectList[t + 0] = spriteInfo.x;
+    rectList[t + 1] = spriteInfo.y;
+    rectList[t + 2] = spriteInfo.x + spriteInfo.width;
+    rectList[t + 3] = spriteInfo.y + spriteInfo.height;
+
+    writeIndex++;
+  }
+
+  if (writeIndex == 0) return;
+
+  final Paint paint = Paint()
+    ..isAntiAlias = true
+    ..style = PaintingStyle.fill
+    ..blendMode = BlendMode.srcOver
+    ..filterQuality = FilterQuality.none;
+
+  // =========================
+  // CHUNKED DRAWING (KEY PART)
+  // =========================
+
+  const int kAtlasBatchSize = 256; // safe for skwasm
+
+  for (int start = 0; start < writeIndex; start += kAtlasBatchSize) {
+    final int count = (start + kAtlasBatchSize <= writeIndex)
+        ? kAtlasBatchSize
+        : (writeIndex - start);
+
     canvas.drawRawAtlas(
       _spriteAtlas.image,
-      transformList,
-      rectList,
-      hasColorTinting ? colorList : null,
-      BlendMode.srcOver,
+      Float32List.sublistView(
+        transformList,
+        start * 4,
+        (start + count) * 4,
+      ),
+      Float32List.sublistView(
+        rectList,
+        start * 4,
+        (start + count) * 4,
+      ),
+      null, // colors
+      null,
       null,
       paint,
     );
-    canvas.restore();
   }
+}
+
+
 
   @override
   bool hitTestSelf(Offset position) {
