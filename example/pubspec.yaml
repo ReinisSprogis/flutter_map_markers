@@ -31,3 +31,6 @@ flutter:
   assets:
     - assets/sun_cloud_64.png
     - assets/sun_and_marker.png
+    - assets/circle_16.png
+    - assets/circle_32.png
+    - assets/circles_16x10.png
