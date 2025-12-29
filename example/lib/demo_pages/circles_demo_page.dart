@@ -34,13 +34,22 @@ class _CirclesDemoPageState extends State<CirclesDemoPage> {
   void _generateMarkers(int count) {
     final randomGenerator = Random(100);
     for (int i = 0; i < count; i++) {
-      Color color = HSLColor.fromAHSL(1, i % 360, 1, doubleInRange(randomGenerator, 0.3, 0.7)).toColor();
-      final point = LatLng(doubleInRange(randomGenerator, 37, 55), doubleInRange(randomGenerator, -9, 30));
+      Color color = HSLColor.fromAHSL(
+        1,
+        i % 360,
+        1,
+        doubleInRange(randomGenerator, 0.3, 0.7),
+      ).toColor();
+      final point = LatLng(
+        doubleInRange(randomGenerator, 37, 55),
+        doubleInRange(randomGenerator, -9, 30),
+      );
       markers.add(_createMarker(point, color));
     }
   }
 
-  static double doubleInRange(Random source, num start, num end) => source.nextDouble() * (end - start) + start;
+  static double doubleInRange(Random source, num start, num end) =>
+      source.nextDouble() * (end - start) + start;
 
   void _selectMarker(LatLng position, Color color) {
     final newKey = '${position.latitude}_${position.longitude}';
@@ -76,14 +85,22 @@ class _CirclesDemoPageState extends State<CirclesDemoPage> {
         point: position,
         width: 200,
         height: 120,
-        child: SelectedMarkerCard(key: _currentCardKey!, title: 'Circle Marker', color: color, onClose: _closeMarker),
+        child: SelectedMarkerCard(
+          key: _currentCardKey!,
+          title: 'Circle Marker',
+          color: color,
+          onClose: _closeMarker,
+        ),
       );
       _isTransitioning = false;
     });
   }
 
   void _closeMarker() {
-    if (selectedMarker == null || _isTransitioning || _currentCardKey?.currentState == null) return;
+    if (selectedMarker == null ||
+        _isTransitioning ||
+        _currentCardKey?.currentState == null)
+      return;
 
     setState(() {
       _isTransitioning = true;
@@ -108,28 +125,36 @@ class _CirclesDemoPageState extends State<CirclesDemoPage> {
     final Paint borderPaint = Paint()..color = Colors.black;
     return CanvasMarker(
       size: (center, metersToPixels, latLngToPixelOffset, zoomLevel) {
-        double radiusInPixels = radiusInMeters ? metersToPixels(25000, position) : circleRadius;
+        double radiusInPixels = radiusInMeters
+            ? metersToPixels(25000, position)
+            : circleRadius;
         return Rect.fromCircle(center: center, radius: radiusInPixels);
       },
       position: position,
       hitArea: (center, metersToPixels, latLngToPixelOffset, zoomLevel) {
-        double radiusInPixels = radiusInMeters ? metersToPixels(25000, position) : circleRadius;
-        final Path path = Path()..addOval(Rect.fromCircle(center: center, radius: radiusInPixels));
+        double radiusInPixels = radiusInMeters
+            ? metersToPixels(25000, position)
+            : circleRadius;
+        final Path path = Path()
+          ..addOval(Rect.fromCircle(center: center, radius: radiusInPixels));
         return path;
       },
-      painter: (canvas, center, metersToPixels, latLngToPixelOffset, zoomLevel) {
-        double radiusInPixels = radiusInMeters ? metersToPixels(25000, position) : 5;
-        canvas.drawCircle(center, radiusInPixels, paint);
-        if (drawBorder) {
-          canvas.drawCircle(
-            center,
-            radiusInPixels,
-            borderPaint
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 1.0,
-          );
-        }
-      },
+      painter:
+          (canvas, center, metersToPixels, latLngToPixelOffset, zoomLevel) {
+            double radiusInPixels = radiusInMeters
+                ? metersToPixels(25000, position)
+                : 5;
+            canvas.drawCircle(center, radiusInPixels, paint);
+            if (drawBorder) {
+              canvas.drawCircle(
+                center,
+                radiusInPixels,
+                borderPaint
+                  ..style = PaintingStyle.stroke
+                  ..strokeWidth = 1.0,
+              );
+            }
+          },
       onTap: () {
         _selectMarker(position, color);
       },
@@ -146,8 +171,16 @@ class _CirclesDemoPageState extends State<CirclesDemoPage> {
           FlutterMap(
             options: MapOptions(
               initialCameraFit: CameraFit.bounds(
-                bounds: LatLngBounds(const LatLng(55, -9), const LatLng(37, 30)),
-                padding: const EdgeInsets.only(left: 16, right: 16, top: 88, bottom: 192),
+                bounds: LatLngBounds(
+                  const LatLng(55, -9),
+                  const LatLng(37, 30),
+                ),
+                padding: const EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 88,
+                  bottom: 192,
+                ),
               ),
               onTap: (tapPosition, point) {
                 _closeMarker();
@@ -155,9 +188,14 @@ class _CirclesDemoPageState extends State<CirclesDemoPage> {
             ),
 
             children: [
-              TileLayer(userAgentPackageName: 'com.flutter_map_markers.example', urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
+              TileLayer(
+                userAgentPackageName: 'com.flutter_map_markers.example',
+                urlTemplate:
+                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+              ),
               CanvasMarkerLayer(markers: markers, drawHitMarkerLast: true),
-              if (selectedMarker != null) MarkerLayer(markers: [selectedMarker!]),
+              if (selectedMarker != null)
+                MarkerLayer(markers: [selectedMarker!]),
             ],
           ),
           // if (!kIsWeb && true)
@@ -194,12 +232,16 @@ class _CirclesDemoPageState extends State<CirclesDemoPage> {
                         children: [
                           Tooltip(
                             message: 'Draw Border',
-                            
+
                             child: Switch(
                               value: drawBorder,
                               thumbIcon: drawBorder
-                                  ? const WidgetStatePropertyAll(Icon(Icons.circle_outlined))
-                                  : const WidgetStatePropertyAll(Icon(Icons.circle)),
+                                  ? const WidgetStatePropertyAll(
+                                      Icon(Icons.circle_outlined),
+                                    )
+                                  : const WidgetStatePropertyAll(
+                                      Icon(Icons.circle),
+                                    ),
                               onChanged: (v) {
                                 setState(() {
                                   drawBorder = v;
@@ -214,8 +256,12 @@ class _CirclesDemoPageState extends State<CirclesDemoPage> {
                             child: Switch(
                               value: radiusInMeters,
                               thumbIcon: radiusInMeters
-                                  ? const WidgetStatePropertyAll(Icon(Icons.straighten))
-                                  : const WidgetStatePropertyAll(Icon(Icons.circle)),
+                                  ? const WidgetStatePropertyAll(
+                                      Icon(Icons.straighten),
+                                    )
+                                  : const WidgetStatePropertyAll(
+                                      Icon(Icons.circle),
+                                    ),
                               onChanged: (v) {
                                 setState(() {
                                   radiusInMeters = v;
@@ -258,13 +304,19 @@ class SelectedMarkerCard extends StatefulWidget {
   final Color color;
   final VoidCallback onClose;
 
-  const SelectedMarkerCard({super.key, required this.title, required this.color, required this.onClose});
+  const SelectedMarkerCard({
+    super.key,
+    required this.title,
+    required this.color,
+    required this.onClose,
+  });
 
   @override
   State<SelectedMarkerCard> createState() => _SelectedMarkerCardState();
 }
 
-class _SelectedMarkerCardState extends State<SelectedMarkerCard> with SingleTickerProviderStateMixin {
+class _SelectedMarkerCardState extends State<SelectedMarkerCard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
@@ -273,11 +325,18 @@ class _SelectedMarkerCardState extends State<SelectedMarkerCard> with SingleTick
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(duration: const Duration(milliseconds: 300), vsync: this);
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
 
-    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _animationController, curve: Curves.elasticOut));
+    _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
+    );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeIn));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+    );
 
     _animationController.forward();
   }
@@ -288,8 +347,14 @@ class _SelectedMarkerCardState extends State<SelectedMarkerCard> with SingleTick
     _isAnimatingOut = true;
 
     // Create reverse animations for smoother exit
-    final reverseScale = Tween<double>(begin: _scaleAnimation.value, end: 0.0).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeIn));
-    final reverseFade = Tween<double>(begin: _fadeAnimation.value, end: 0.0).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOut));
+    final reverseScale = Tween<double>(begin: _scaleAnimation.value, end: 0.0)
+        .animate(
+          CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+        );
+    final reverseFade = Tween<double>(begin: _fadeAnimation.value, end: 0.0)
+        .animate(
+          CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+        );
 
     setState(() {
       _scaleAnimation = reverseScale;
@@ -338,7 +403,13 @@ class _SelectedMarkerCardState extends State<SelectedMarkerCard> with SingleTick
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
-                              shadows: [Shadow(color: Colors.black54, offset: Offset(1, 1), blurRadius: 2)],
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black54,
+                                  offset: Offset(1, 1),
+                                  blurRadius: 2,
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -350,8 +421,15 @@ class _SelectedMarkerCardState extends State<SelectedMarkerCard> with SingleTick
                           },
                           child: Container(
                             padding: const EdgeInsets.all(2),
-                            decoration: BoxDecoration(color: Colors.white.withAlpha(204), borderRadius: BorderRadius.circular(10)),
-                            child: const Icon(Icons.close, size: 16, color: Colors.black87),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withAlpha(204),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              size: 16,
+                              color: Colors.black87,
+                            ),
                           ),
                         ),
                       ],
@@ -365,21 +443,30 @@ class _SelectedMarkerCardState extends State<SelectedMarkerCard> with SingleTick
                           icon: const Icon(Icons.info_outline),
                           iconSize: 18,
                           color: Colors.white,
-                          style: IconButton.styleFrom(backgroundColor: Colors.white.withAlpha(51), padding: const EdgeInsets.all(4)),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.white.withAlpha(51),
+                            padding: const EdgeInsets.all(4),
+                          ),
                         ),
                         IconButton(
                           onPressed: () {},
                           icon: const Icon(Icons.favorite_border),
                           iconSize: 18,
                           color: Colors.white,
-                          style: IconButton.styleFrom(backgroundColor: Colors.white.withAlpha(51), padding: const EdgeInsets.all(4)),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.white.withAlpha(51),
+                            padding: const EdgeInsets.all(4),
+                          ),
                         ),
                         IconButton(
                           onPressed: () {},
                           icon: const Icon(Icons.navigation),
                           iconSize: 18,
                           color: Colors.white,
-                          style: IconButton.styleFrom(backgroundColor: Colors.white.withAlpha(51), padding: const EdgeInsets.all(4)),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.white.withAlpha(51),
+                            padding: const EdgeInsets.all(4),
+                          ),
                         ),
                       ],
                     ),
