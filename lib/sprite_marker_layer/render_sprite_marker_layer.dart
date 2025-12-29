@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
@@ -27,7 +28,7 @@ class RenderSpriteMarkerLayer extends RenderBox {
   /// Whether the tap sequence involved multi-touch at any time.
   bool _tapCandidateHadMultiTouch = false;
 
-   RenderSpriteMarkerLayer({
+  RenderSpriteMarkerLayer({
     required SpriteAtlas spriteAtlas,
     required List<SpriteMarker> markers,
     required MapCamera camera,
@@ -54,8 +55,6 @@ class RenderSpriteMarkerLayer extends RenderBox {
           }
           _clearTapCandidate();
         };
-
- 
 
   SpriteAtlas get spriteAtlas => _spriteAtlas;
   set spriteAtlas(SpriteAtlas value) {
@@ -122,111 +121,101 @@ class RenderSpriteMarkerLayer extends RenderBox {
 
   /// Draws all visible sprites using the efficient drawRawAtlas method.
   void _drawSpritesUsingAtlas(
-  Canvas canvas,
-  List<SpriteMarker> visibleMarkers,
-  Offset offset,
-) {
-  final int markerCount = visibleMarkers.length;
+    Canvas canvas,
+    List<SpriteMarker> visibleMarkers,
+    Offset offset,
+  ) {
+    final int markerCount = visibleMarkers.length;
 
-  // Preallocate maximum possible size
-  final Float32List rectList = Float32List(markerCount * 4);
-  final Float32List transformList = Float32List(markerCount * 4);
+    // Preallocate maximum possible size
+    final Float32List rectList = Float32List(markerCount * 4);
+    final Float32List transformList = Float32List(markerCount * 4);
 
-  int writeIndex = 0;
+    int writeIndex = 0;
 
-  for (int i = 0; i < markerCount; i++) {
-    final SpriteMarker marker = visibleMarkers[i];
+    for (int i = 0; i < markerCount; i++) {
+      final SpriteMarker marker = visibleMarkers[i];
 
-    // Convert world → screen
-    final Offset screenOffset =
-        _camera.getOffsetFromOrigin(marker.position);
+      // Convert world → screen
+      final Offset screenOffset = _camera.getOffsetFromOrigin(marker.position);
 
-    if (!screenOffset.dx.isFinite || !screenOffset.dy.isFinite) continue;
+      if (!screenOffset.dx.isFinite || !screenOffset.dy.isFinite) continue;
 
-    final SpriteInfo spriteInfo =
-        _spriteAtlas.getSpriteInfo(marker.spriteIndex);
+      final SpriteInfo spriteInfo = _spriteAtlas.getSpriteInfo(
+        marker.spriteIndex,
+      );
 
-    if (spriteInfo.width <= 0 || spriteInfo.height <= 0) continue;
+      if (spriteInfo.width <= 0 || spriteInfo.height <= 0) continue;
 
-    double totalRotation = marker.rotation;
-    if (marker.rotate) {
-      totalRotation -= _camera.rotationRad;
+      double totalRotation = marker.rotation;
+      if (marker.rotate) {
+        totalRotation -= _camera.rotationRad;
+      }
+
+      if (!totalRotation.isFinite) continue;
+
+      final double scale = marker.scale;
+      if (scale <= 0) continue;
+
+      final double dx = screenOffset.dx + offset.dx;
+      final double dy = screenOffset.dy + offset.dy;
+
+      if (!dx.isFinite || !dy.isFinite) continue;
+
+      final RSTransform transform = RSTransform.fromComponents(
+        rotation: totalRotation,
+        scale: scale,
+        anchorX: spriteInfo.width * 0.5,
+        anchorY: spriteInfo.height * 0.5,
+        translateX: dx,
+        translateY: dy,
+      );
+
+      final int t = writeIndex * 4;
+
+      transformList[t + 0] = transform.scos;
+      transformList[t + 1] = transform.ssin;
+      transformList[t + 2] = transform.tx;
+      transformList[t + 3] = transform.ty;
+
+      rectList[t + 0] = spriteInfo.x;
+      rectList[t + 1] = spriteInfo.y;
+      rectList[t + 2] = spriteInfo.x + spriteInfo.width;
+      rectList[t + 3] = spriteInfo.y + spriteInfo.height;
+
+      writeIndex++;
     }
 
-    if (!totalRotation.isFinite) continue;
+    if (writeIndex == 0) return;
 
-    final double scale = marker.scale;
-    if (scale <= 0) continue;
+    final Paint paint = Paint()
+      ..isAntiAlias = true
+      ..style = PaintingStyle.fill
+      ..blendMode = BlendMode.srcOver
+      ..filterQuality = FilterQuality.high;
 
-    final double dx = screenOffset.dx + offset.dx;
-    final double dy = screenOffset.dy + offset.dy;
+    // =========================
+    // CHUNKED DRAWING (KEY PART)
+    // =========================
 
-    if (!dx.isFinite || !dy.isFinite) continue;
+    const int kAtlasBatchSize = 256; // safe for skwasm
 
-    final RSTransform transform = RSTransform.fromComponents(
-      rotation: totalRotation,
-      scale: scale,
-      anchorX: spriteInfo.width * 0.5,
-      anchorY: spriteInfo.height * 0.5,
-      translateX: dx,
-      translateY: dy,
-    );
+    for (int start = 0; start < writeIndex; start += kAtlasBatchSize) {
+      final int count = (start + kAtlasBatchSize <= writeIndex)
+          ? kAtlasBatchSize
+          : (writeIndex - start);
 
-    final int t = writeIndex * 4;
-
-    transformList[t + 0] = transform.scos;
-    transformList[t + 1] = transform.ssin;
-    transformList[t + 2] = transform.tx;
-    transformList[t + 3] = transform.ty;
-
-    rectList[t + 0] = spriteInfo.x;
-    rectList[t + 1] = spriteInfo.y;
-    rectList[t + 2] = spriteInfo.x + spriteInfo.width;
-    rectList[t + 3] = spriteInfo.y + spriteInfo.height;
-
-    writeIndex++;
+      canvas.drawRawAtlas(
+        _spriteAtlas.image,
+        Float32List.sublistView(transformList, start * 4, (start + count) * 4),
+        Float32List.sublistView(rectList, start * 4, (start + count) * 4),
+        null, // colors
+        null,
+        null,
+        paint,
+      );
+    }
   }
-
-  if (writeIndex == 0) return;
-
-  final Paint paint = Paint()
-    ..isAntiAlias = true
-    ..style = PaintingStyle.fill
-    ..blendMode = BlendMode.srcOver
-    ..filterQuality = FilterQuality.none;
-
-  // =========================
-  // CHUNKED DRAWING (KEY PART)
-  // =========================
-
-  const int kAtlasBatchSize = 256; // safe for skwasm
-
-  for (int start = 0; start < writeIndex; start += kAtlasBatchSize) {
-    final int count = (start + kAtlasBatchSize <= writeIndex)
-        ? kAtlasBatchSize
-        : (writeIndex - start);
-
-    canvas.drawRawAtlas(
-      _spriteAtlas.image,
-      Float32List.sublistView(
-        transformList,
-        start * 4,
-        (start + count) * 4,
-      ),
-      Float32List.sublistView(
-        rectList,
-        start * 4,
-        (start + count) * 4,
-      ),
-      null, // colors
-      null,
-      null,
-      paint,
-    );
-  }
-}
-
-
 
   @override
   bool hitTestSelf(Offset position) {

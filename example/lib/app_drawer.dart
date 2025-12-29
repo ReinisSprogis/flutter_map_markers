@@ -8,7 +8,7 @@ import 'package:flutter_map_markers_example/demo_pages/marker_demo_page.dart';
 import 'package:flutter_map_markers_example/demo_pages/meters_to_pixels_demo_page.dart';
 import 'package:flutter_map_markers_example/demo_pages/pricetag_marker_demo.dart';
 import 'package:flutter_map_markers_example/demo_pages/simple_marker_demo_page.dart';
-import 'package:flutter_map_markers_example/demo_pages/sprite_markers_demo_page.dart';
+import 'package:flutter_map_markers_example/demo_pages/aircraft_sprite_markers_demo_page.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -140,7 +140,7 @@ class AppDrawer extends StatelessWidget {
               Navigator.pop(context);
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
-                  builder: (context) => const SpriteMarkersDemoPage(),
+                  builder: (context) => const AircraftSpriteMarkerDemoPage(),
                 ),
               );
             },
