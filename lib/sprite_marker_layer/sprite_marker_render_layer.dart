@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_marker.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/sprite_atlas.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/render_sprite_marker_layer.dart';
 
 class SpriteMarkerRenderLayer extends LeafRenderObjectWidget {

@@ -5,8 +5,9 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_marker.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/sprite_atlas.dart';
+
 import 'package:flutter_map_markers/sprite_marker_layer/sprite_marker_layer.dart';
 import 'package:flutter_map_markers_example/app_drawer.dart';
 import 'package:flutter_map_markers_example/demo_pages/heli_8.dart';

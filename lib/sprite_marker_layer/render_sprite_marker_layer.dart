@@ -6,7 +6,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_marker.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/sprite_atlas.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas.dart';
 
 /// A render object that draws [SpriteMarker]s using sprite atlas rendering
 /// for optimal performance when displaying many markers.
