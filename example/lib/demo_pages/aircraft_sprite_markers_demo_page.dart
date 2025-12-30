@@ -2,29 +2,20 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_marker.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/model/static_sprite_marker.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/no_manager/sprite_marker_layer.dart';
 
-import 'package:flutter_map_markers/sprite_marker_layer/sprite_marker_layer.dart';
 import 'package:flutter_map_markers_example/app_drawer.dart';
-import 'package:flutter_map_markers_example/demo_pages/heli_8.dart';
+import 'package:flutter_map_markers_example/demo_pages/heli_2.dart';
 import 'package:flutter_map_markers_example/utility/utility.dart';
 import 'package:latlong2/latlong.dart';
 
-class AircraftSpriteMarker extends SpriteMarker {
-  double speed;
-  AircraftSpriteMarker({
-    this.speed = 0.0001,
-    required super.position,
-    required super.spriteIndex,
-    required super.scale,
-    required super.rotation,
-    required super.rotate,
-  });
-}
+
 
 class AircraftSpriteMarkerDemoPage extends StatefulWidget {
   const AircraftSpriteMarkerDemoPage({super.key});
@@ -39,7 +30,7 @@ class _AircraftSpriteMarkerDemoPageState
     with SingleTickerProviderStateMixin {
   late final AnimationController _animationController;
   SpriteAtlas? _spriteAtlas;
-  List<AircraftSpriteMarker> _markers = [];
+  List<StaticSpriteMarker> _markers = [];
   int markerCount = 1;
   final double minSpeed = 0.00008;
   final double maxSpeed = 0.0008;
@@ -54,12 +45,13 @@ class _AircraftSpriteMarkerDemoPageState
       });
     });
     _generateSprites(1);
-    // 8 frames at ~7.5 FPS animation = ~133ms per loop (1000ms / 7.5fps)
-    // This ensures smooth animation where each frame is visible for ~16.67ms
     _animationController =
         AnimationController(
             vsync: this,
-            duration: const Duration(milliseconds: 1067), // 8 frames * 133.33ms
+            // 60 alternations per second = 30 complete cycles per second
+            // 2 frames, each visible for 1/60 second = 16.67ms
+            // Full cycle = 33.33ms
+            duration: const Duration(milliseconds: 33),
           )
           ..addListener(() {
             setState(() {
@@ -70,9 +62,8 @@ class _AircraftSpriteMarkerDemoPageState
   }
 
   void updateSpriteFrames() {
-    // Map animation value (0.0 to 1.0) to sprite index (0 to 7)
     // Use floor to ensure clean frame transitions
-    final frameIndex = (_animationController.value * 8).floor().clamp(0, 7);
+    final frameIndex = (_animationController.value * 2).floor().clamp(0, 1);
 
     // Define map bounds (London area with some padding)
     const double minLat = -179.0;
@@ -88,8 +79,8 @@ class _AircraftSpriteMarkerDemoPageState
 
       // Calculate new position based on rotation direction
       // When rotation is 0, helicopter faces north (aligned with longitude)
-      final double dx = sin(marker.rotation) * marker.speed;
-      final double dy = cos(marker.rotation) * marker.speed;
+      final double dx = sin(marker.rotation) * 0.00002;
+      final double dy = cos(marker.rotation) * 0.00002;
 
       double newLat = marker.position.latitude + dy;
       double newLng = marker.position.longitude + dx;
@@ -106,8 +97,8 @@ class _AircraftSpriteMarkerDemoPageState
         newLng = marker.position.longitude.clamp(minLng, maxLng);
       }
 
-      _markers[i] = AircraftSpriteMarker(
-        speed: marker.speed,
+      _markers[i] = StaticSpriteMarker(
+        id: marker.id,
         position: LatLng(newLat, newLng),
         spriteIndex: frameIndex,
         scale: marker.scale,
@@ -124,14 +115,14 @@ class _AircraftSpriteMarkerDemoPageState
   }
 
   Future<void> _loadAssetImage() async {
-    final ByteData data = await rootBundle.load('assets/heli_8.png');
+    final ByteData data = await rootBundle.load('assets/heli_2.png');
     final Uint8List bytes = data.buffer.asUint8List();
     final ui.Codec codec = await ui.instantiateImageCodec(bytes);
     final ui.FrameInfo frameInfo = await codec.getNextFrame();
     setState(() {
       _spriteAtlas = SpriteAtlas.custom(
         image: frameInfo.image,
-        sprites: Heli8.sprites,
+        sprites: Heli2.sprites,
       );
       // Create a horizontal sprite atlas with 2 sprites of 64x64 each
       // _spriteAtlas = SpriteAtlas.horizontal(
@@ -150,23 +141,22 @@ class _AircraftSpriteMarkerDemoPageState
     //random rotation and scale for each marker
 
     setState(() {
-      _markers = List<AircraftSpriteMarker>.generate(count, (index) {
+      _markers = List<StaticSpriteMarker>.generate(count, (index) {
         //rotation in radians
         double rotation = random.nextDouble() * 2 * pi;
         double scale = 0.5 + random.nextDouble() * 0.3;
-        double speed = minSpeed + random.nextDouble() * (maxSpeed - minSpeed);
         final position = Utility.clusterPoint(
           london,
           random,
           maxDistance: 10.0,
         );
-        return AircraftSpriteMarker(
-          speed: speed,
+        return StaticSpriteMarker(
+          id: 'marker_$index',
           scale: scale,
-          rotate: false,
+          rotate: true,
           rotation: rotation,
           position: position,
-          spriteIndex: index % 8,
+          spriteIndex: index % 2,
         );
       });
       markerCount = count;
@@ -194,13 +184,13 @@ class _AircraftSpriteMarkerDemoPageState
 
     setState(() {
       _markers.add(
-        AircraftSpriteMarker(
+        StaticSpriteMarker(
+          id: 'marker_${_markers.length}',
           rotate: false,
-          speed: speed,
           scale: scale,
           rotation: rotation,
           position: position,
-          spriteIndex: _markers.length % 8,
+          spriteIndex: _markers.length % 2,
         ),
       );
       markerCount = _markers.length;
@@ -272,6 +262,13 @@ class _AircraftSpriteMarkerDemoPageState
                     ),
                   ),
                 ),
+                if (!kIsWeb && true)
+                  Positioned(
+                    bottom: 16,
+                    left: 0,
+                    right: 0,
+                    child: PerformanceOverlay.allEnabled(),
+                  ),
               ],
             ),
     );

@@ -10,6 +10,7 @@ import 'package:flutter_map_markers_example/demo_pages/pricetag_marker_demo.dart
 import 'package:flutter_map_markers_example/demo_pages/simple_marker_demo_page.dart';
 import 'package:flutter_map_markers_example/demo_pages/aircraft_sprite_markers_demo_page.dart';
 import 'package:flutter_map_markers_example/demo_pages/simple_sprite_marker_demo_page.dart';
+import 'package:flutter_map_markers_example/demo_pages/sprite_layer_demo.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -148,12 +149,24 @@ class AppDrawer extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.circle),
-            title: const Text('Simple Sprite Marker'),
+            title: const Text('Simple Sprite Marker Manager'),
             onTap: () {
               Navigator.pop(context);
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
                   builder: (context) => const SimpleSpriteMarkerDemoPage(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.circle),
+            title: const Text('Sprite layer'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => const SpriteLayerDemo(),
                 ),
               );
             },
