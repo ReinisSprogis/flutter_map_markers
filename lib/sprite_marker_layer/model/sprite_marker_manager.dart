@@ -691,15 +691,39 @@ class SpriteMarkerManager extends ChangeNotifier {
   void _ensureCapacity(int required) {
     if (required <= _capacity) return;
 
+    final int oldCapacity = _capacity;
+    final Float32List oldTransforms = _transforms;
+    final Float32List oldRects = _rects;
+    final Int32List oldSpriteIndices = _bufferSpriteIndices;
+    final List<SpriteMarker?> oldBufferMarkers = _bufferMarkers;
+
     int newCapacity = _capacity == 0 ? 256 : _capacity * 2;
     while (newCapacity < required) {
       newCapacity *= 2;
     }
 
-    _transforms = Float32List(newCapacity * 4);
-    _rects = Float32List(newCapacity * 4);
-    _bufferSpriteIndices = Int32List(newCapacity);
-    _bufferMarkers = List<SpriteMarker?>.filled(newCapacity, null);
+    final Float32List newTransforms = Float32List(newCapacity * 4);
+    final Float32List newRects = Float32List(newCapacity * 4);
+    final Int32List newSpriteIndices = Int32List(newCapacity);
+    final List<SpriteMarker?> newBufferMarkers = List<SpriteMarker?>.filled(
+      newCapacity,
+      null,
+    );
+
+    // Preserve existing buffered entries. This is critical for incremental
+    // operations (e.g. addMarker) where we append without rebuilding.
+    final int copyCount = min(_writeCount, oldCapacity);
+    if (copyCount > 0) {
+      newTransforms.setRange(0, copyCount * 4, oldTransforms);
+      newRects.setRange(0, copyCount * 4, oldRects);
+      newSpriteIndices.setRange(0, copyCount, oldSpriteIndices);
+      newBufferMarkers.setRange(0, copyCount, oldBufferMarkers);
+    }
+
+    _transforms = newTransforms;
+    _rects = newRects;
+    _bufferSpriteIndices = newSpriteIndices;
+    _bufferMarkers = newBufferMarkers;
     _capacity = newCapacity;
   }
 
