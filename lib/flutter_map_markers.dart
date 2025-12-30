@@ -7,3 +7,4 @@ export 'sprite_marker_layer/model/sprite_atlas.dart';
 export 'sprite_marker_layer/model/static_sprite_marker.dart';
 export 'sprite_marker_layer/model/sprite_marker_manager.dart';
 export 'sprite_marker_layer/manager/sprite_marker_manager_layer.dart';
+export 'sprite_marker_layer/sprite_util.dart';

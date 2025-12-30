@@ -6,155 +6,73 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/flutter_map_markers.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/animated_sprite_marker.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/animation_mode.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_marker_manager.dart';
 import 'package:flutter_map_markers_example/app_drawer.dart';
-import 'package:flutter_map_markers_example/demo_pages/heli_2.dart';
 import 'package:flutter_map_markers_example/utility/utility.dart';
 import 'package:latlong2/latlong.dart';
 
-class SimpleSpriteMarkerDemoPage extends StatefulWidget {
-  const SimpleSpriteMarkerDemoPage({super.key});
+class SpriteLayerDemo extends StatefulWidget {
+  const SpriteLayerDemo({super.key});
 
   @override
-  State<SimpleSpriteMarkerDemoPage> createState() =>
-      _SimpleSpriteMarkerDemoPageState();
+  State<SpriteLayerDemo> createState() => _SpriteLayerDemoState();
 }
 
-class _SimpleSpriteMarkerDemoPageState extends State<SimpleSpriteMarkerDemoPage>
-    with TickerProviderStateMixin {
+class _SpriteLayerDemoState extends State<SpriteLayerDemo>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _animationController;
+  SpriteAtlas? _spriteAtlas;
   SpriteMarkerManager? _markerManager;
-  List<AnimatedSpriteMarker> _markers = [];
+  List<AnimatedSpriteMarker> markers = [];
   int markerCount = 1000;
   int lastTime = 0;
   @override
   void initState() {
     super.initState();
-
-    Future.microtask(() async {
-      await _loadAtlas();
-    });
     _animationController =
         AnimationController(
             vsync: this,
-            duration: const Duration(milliseconds: 1000),
+            // 60 alternations per second = 30 complete cycles per second
+            // 2 frames, each visible for 1/60 second = 16.67ms
+            // Full cycle = 33.33ms
+            duration: const Duration(milliseconds: 33),
           )
           ..addListener(() {
             final int nowMs =
                 _animationController.lastElapsedDuration?.inMilliseconds ?? 0;
             final int deltaTime = nowMs - lastTime;
             lastTime = nowMs;
+            setState(() {
+              _markerManager?.tick(deltaTime);
+            });
+          });
 
-            // Mutate markers in place (positions/rotations/etc).
-            updateSpriteFrames();
-
-            // Single-pass buffered update: transforms + animation.
-            _markerManager?.tick(deltaTime, markersMoved: true);
-          })
-          ..repeat();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  LatLng? _previousHoverPosition;
-  final double minSpeed = 0.00008;
-  final double maxSpeed = 0.0008;
-  void _addSingleSprite(LatLng position) {
-    final Random random = Random();
-    double rotation;
-
-    // Calculate rotation from previous position if available
-    if (_previousHoverPosition != null) {
-      final dx = position.longitude - _previousHoverPosition!.longitude;
-      final dy = position.latitude - _previousHoverPosition!.latitude;
-      rotation = atan2(dx, dy);
-      // Add random variance to rotation (±15 degrees)
-      final variance = (random.nextDouble() - 0.5) * (pi / 6);
-      rotation += variance;
-    } else {
-      rotation = random.nextDouble() * 2 * pi;
-    }
-
-    double scale = 0.5 + random.nextDouble() * 0.3;
-    //double speed = minSpeed + random.nextDouble() * (maxSpeed - minSpeed);
-
-    final marker = AnimatedSpriteMarker(
-      id: 'marker_${_markers.length}',
-      rotate: false,
-      scale: scale,
-      rotation: rotation,
-      position: position,
-      animationCycles: const [
-        [0, 1],
-      ],
-    );
-
-    _markers.add(marker);
-    _previousHoverPosition = position;
-
-    // Incremental add: avoids O(n) diff + rebuild per hover.
-    _markerManager?.addMarker(marker);
-
-    // Throttle label updates to avoid rebuild storms while hovering.
-    // if (_markers.length % 200 == 0) {
-    //   setState(() {
-    //     markerCount = _markers.length;
-    //   });
-    // }
+    Future.microtask(() async {
+      await _loadAtlas();
+    });
   }
 
   Future<SpriteAtlas> _getAtlas() async {
-    final image = await SpriteMarkerManager.loadAtlasImageFromAssets(
-      'assets/heli_2.png',
+    final image = await SpriteUtil.loadAtlasImageFromAssets(
+      'assets/markers_48x10_anim_colored.png',
     );
-    final spriteAtlas = SpriteAtlas.custom(
+    final spriteAtlas = SpriteAtlas.horizontal(
       image: image,
-      sprites: Heli2.sprites,
+      spriteCount: 10,
+      spriteWidth: 48,
+      spriteHeight: 48,
     );
     return spriteAtlas;
   }
-  //   final spriteAtlas = SpriteAtlas.horizontal(
-  //     image: image,
-  //     spriteCount: 10,
-  //     spriteWidth: 48,
-  //     spriteHeight: 48,
-  //   );
-  //   return spriteAtlas;
-  // }
 
   Future<void> _loadAtlas() async {
-    final spriteAtlas = await _getAtlas();
+    _spriteAtlas = await _getAtlas();
     _markerManager = SpriteMarkerManager(
+      spriteAtlas: _spriteAtlas!,
       spriteCycles: [
-        [0, 1],
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
       ],
-      spriteAtlas: spriteAtlas,
     );
     _generateSprites(1);
-  }
-
-  void updateSpriteFrames() {
-    // Movement speed (degrees per frame)
-    // const double speed = 0.00002;
-
-    for (int i = 0; i < _markers.length; i++) {
-      final marker = _markers[i];
-
-      // Calculate new position based on rotation direction
-      // When rotation is 0, helicopter faces north (aligned with longitude)
-      final double dx = sin(marker.rotation) * 0.00002;
-      final double dy = cos(marker.rotation) * 0.00002;
-
-      double newLat = marker.position.latitude + dy;
-      double newLng = marker.position.longitude + dx;
-
-      _markers[i].position = LatLng(newLat, newLng);
-    }
   }
 
   void _generateSprites(int count) {
@@ -163,9 +81,8 @@ class _SimpleSpriteMarkerDemoPageState extends State<SimpleSpriteMarkerDemoPage>
     //random rotation and scale for each marker
 
     setState(() {
-      _markers = List<AnimatedSpriteMarker>.generate(count, (index) {
+      markers = List<AnimatedSpriteMarker>.generate(count, (index) {
         //rotation in radians
-        double rotation = random.nextDouble() * 2 * pi;
         double scale = 0.5 + random.nextDouble() * 0.3;
 
         final position = Utility.clusterPoint(
@@ -174,31 +91,29 @@ class _SimpleSpriteMarkerDemoPageState extends State<SimpleSpriteMarkerDemoPage>
           maxDistance: 10.0,
         );
         return AnimatedSpriteMarker(
-          cycleIndex: 0,
           id: 'marker_$index',
           scale: scale,
           rotate: true,
-          fps: 60,
-          animationCycles: [
-            [0, 1],
-          ],
+          fps: 6,
           // rotation: rotation,
+          mode: AnimationMode.once,
           position: position,
-          mode: AnimationMode.pingPong,
-          anchor: Alignment.center,
+          animationCycles: [
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+          ],
         );
       });
       markerCount = count;
-      _markerManager!.updateMarkers(_markers);
     });
+    _markerManager?.updateMarkers(markers);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Sprite Markers manager Demo')),
+      appBar: AppBar(title: const Text('Sprite Markers Demo')),
       drawer: const AppDrawer(),
-      body: _markerManager == null
+      body: _spriteAtlas == null && _markerManager == null
           ? const Center(child: CircularProgressIndicator())
           : Stack(
               children: [
@@ -208,9 +123,6 @@ class _SimpleSpriteMarkerDemoPageState extends State<SimpleSpriteMarkerDemoPage>
                     initialZoom: 5,
                     maxZoom: 18,
                     minZoom: 1,
-                    onPointerHover: (event, point) {
-                      _addSingleSprite(point);
-                    },
                   ),
                   children: [
                     TileLayer(
@@ -309,6 +221,18 @@ class _SimpleSpriteMarkerDemoPageState extends State<SimpleSpriteMarkerDemoPage>
                   ),
               ],
             ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          if (_animationController.isAnimating) {
+            _animationController.stop();
+          } else {
+            _animationController.repeat();
+          }
+        },
+        child: Icon(
+          _animationController.isAnimating ? Icons.pause : Icons.play_arrow,
+        ),
+      ),
     );
   }
 }

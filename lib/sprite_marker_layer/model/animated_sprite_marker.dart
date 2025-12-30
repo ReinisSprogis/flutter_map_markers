@@ -7,8 +7,7 @@ class AnimatedSpriteMarker extends SpriteMarker {
   List<List<int>> animationCycles;
   int fps;
   AnimationMode mode;
-  int _frameIndex = 0;
-  double _time = 0.0;
+
   bool playing = true;
   AnimatedSpriteMarker({
     required super.id,
@@ -27,5 +26,5 @@ class AnimatedSpriteMarker extends SpriteMarker {
   });
 
   @override
-  int get spriteIndex => animationCycles[cycleIndex][_frameIndex];
+  int get spriteIndex =>0;
 }
