@@ -8,6 +8,7 @@ import 'package:flutter_map_markers/sprite_marker_layer/model/animated_sprite_ma
 import 'package:flutter_map_markers/sprite_marker_layer/model/animation_mode.dart';
 import 'package:flutter_map_markers_example/app_drawer.dart';
 import 'package:flutter_map_markers_example/demo_pages/diamond_marker_anim.dart';
+import 'package:flutter_map_markers_example/demo_pages/sprites/gem_red_and_white.dart';
 import 'package:flutter_map_markers_example/utility/utility.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -52,11 +53,11 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
 
   Future<SpriteAtlas> _getAtlas() async {
     final image = await SpriteUtil.loadAtlasImageFromAssets(
-      'assets/diamond_marker_anim.png',
+      'assets/gem_red_and_white.png',
     );
     final spriteAtlas = SpriteAtlas.custom(
       image: image,
-      sprites: DiamondMarkerAnim.sprites,
+      sprites: GemRedAndWhite.sprites,
     );
     return spriteAtlas;
   }
@@ -96,12 +97,13 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
           mode: AnimationMode.loop,
           anchor: Alignment.bottomCenter,
           position: position,
-          cycleIndex: 0,
+          cycleIndex: index % 2,
           // Example: pin the first marker to a specific frame.
           cycleFrameIndex: random.nextInt(10),
           animating: true,
           animationCycles: [
             [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+            [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
           ],
         );
       });
