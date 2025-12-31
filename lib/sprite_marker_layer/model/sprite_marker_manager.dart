@@ -39,6 +39,20 @@ class SpriteMarkerManager extends ChangeNotifier {
   /// would not be visible.
   bool cullMarkers = true;
 
+  /// During active panning, rebuilding the visible marker buffer by scanning all
+  /// markers can be expensive at high marker counts.
+  ///
+  /// If > 0, full visibility rebuilds will be throttled to at most once per
+  /// this interval while the camera is only translating (zoom & rotation
+  /// unchanged). Between rebuilds, the cached transforms are shifted by the
+  /// camera translation delta.
+  int cameraPanRebuildIntervalMs = 150;
+
+  int _lastFullRebuildMs = 0;
+  bool _needsPanShift = false;
+  double _pendingPanDx = 0.0;
+  double _pendingPanDy = 0.0;
+
   /// Update the viewport size used for culling.
   ///
   /// This should be called by the render object during layout.
@@ -47,6 +61,9 @@ class SpriteMarkerManager extends ChangeNotifier {
     _viewportSize = size;
     // Viewport changed (resize): cached visibility set is invalid.
     _needsCameraRebuild = true;
+    _needsPanShift = false;
+    _pendingPanDx = 0.0;
+    _pendingPanDy = 0.0;
     notifyListeners();
   }
 
@@ -309,14 +326,52 @@ class SpriteMarkerManager extends ChangeNotifier {
     final old = camera;
     camera = newCamera;
 
-    // Avoid rebuilding when FlutterMap rebuilds the layer with a new MapCamera
+    // Avoid work when FlutterMap rebuilds the layer with a new MapCamera
     // instance that carries identical values.
-    if (old != null && _sameCameraValues(old, newCamera)) {
+    if (old != null && _sameCameraValues(old, newCamera)) return;
+
+    // If we don't have a previous camera or buffers yet, do the safe thing.
+    if (old == null || _writeCount == 0) {
+      _needsCameraRebuild = true;
+      _needsPanShift = false;
+      _pendingPanDx = 0.0;
+      _pendingPanDy = 0.0;
+      notifyListeners();
       return;
     }
 
-    // Panning can call this multiple times per frame; rebuild once in draw().
-    _needsCameraRebuild = true;
+    // If zoom or rotation changed, the translation-delta shortcut is invalid.
+    final bool zoomOrRotationChanged =
+        old.zoom != newCamera.zoom || old.rotationRad != newCamera.rotationRad;
+    if (zoomOrRotationChanged) {
+      _needsCameraRebuild = true;
+      _needsPanShift = false;
+      _pendingPanDx = 0.0;
+      _pendingPanDy = 0.0;
+      notifyListeners();
+      return;
+    }
+
+    // Pure pan: shift cached transforms by a constant delta instead of
+    // rebuilding by scanning all markers.
+    final ref = const coord.LatLng(0, 0);
+    final Offset oldRef = old.getOffsetFromOrigin(ref);
+    final Offset newRef = newCamera.getOffsetFromOrigin(ref);
+    final double dx = newRef.dx - oldRef.dx;
+    final double dy = newRef.dy - oldRef.dy;
+
+    if (dx.isFinite && dy.isFinite && (dx != 0.0 || dy != 0.0)) {
+      _pendingPanDx += dx;
+      _pendingPanDy += dy;
+      _needsPanShift = true;
+    }
+
+    final int nowMs = DateTime.now().millisecondsSinceEpoch;
+    if (cameraPanRebuildIntervalMs > 0 &&
+        nowMs - _lastFullRebuildMs >= cameraPanRebuildIntervalMs) {
+      _needsCameraRebuild = true;
+    }
+
     notifyListeners();
   }
 
@@ -420,6 +475,12 @@ class SpriteMarkerManager extends ChangeNotifier {
 
     _ensureCapacity(_markers.length);
     _writeCount = 0;
+
+    // Full rebuild replaces the buffered coordinate space; discard pan shifts.
+    _needsPanShift = false;
+    _pendingPanDx = 0.0;
+    _pendingPanDy = 0.0;
+    _lastFullRebuildMs = DateTime.now().millisecondsSinceEpoch;
 
     for (final marker in _markers.values) {
       final screen = worldToScreen(marker.position);
@@ -533,6 +594,20 @@ class SpriteMarkerManager extends ChangeNotifier {
       _needsTransformUpdate = false;
       _needsRectUpdate = false;
       return;
+    }
+
+    // Fast-path for pure pan: shift cached transforms by a constant delta.
+    if (_needsPanShift && (_pendingPanDx != 0.0 || _pendingPanDy != 0.0)) {
+      final double dx = _pendingPanDx;
+      final double dy = _pendingPanDy;
+      for (int i = 0; i < _writeCount; i++) {
+        final int base = i * 4;
+        _transforms[base + 2] = _transforms[base + 2] + dx;
+        _transforms[base + 3] = _transforms[base + 3] + dy;
+      }
+      _pendingPanDx = 0.0;
+      _pendingPanDy = 0.0;
+      _needsPanShift = false;
     }
 
     if (_writeCount == 0) {
