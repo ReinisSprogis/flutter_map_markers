@@ -44,3 +44,6 @@ flutter:
     - assets/markers_48x10_anim_colored.png
     - assets/markers_animated_480x90_10x48.png
     - assets/diamond_marker_anim.png
+    - assets/heli_fire.png
+    - assets/red_circle_48x48.png
+    

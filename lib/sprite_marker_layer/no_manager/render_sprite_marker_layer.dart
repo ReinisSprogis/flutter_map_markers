@@ -7,6 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_marker.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas.dart';
+import 'package:latlong2/latlong.dart';
 
 /// A render object that draws [SpriteMarker]s using sprite atlas rendering
 /// for optimal performance when displaying many markers.
@@ -15,6 +16,7 @@ class RenderSpriteMarkerLayer extends RenderBox {
   List<SpriteMarker> _markers;
   MapCamera _camera;
   bool _cullMarkers;
+  bool _spriteSizeInMeters;
 
   /// Active pointers currently down for tap detection.
   final Set<int> _activePointers = <int>{};
@@ -33,10 +35,12 @@ class RenderSpriteMarkerLayer extends RenderBox {
     required List<SpriteMarker> markers,
     required MapCamera camera,
     bool cullMarkers = true,
+    bool spriteSizeInMeters = false,
   }) : _spriteAtlas = spriteAtlas,
        _markers = markers,
        _camera = camera,
-       _cullMarkers = cullMarkers;
+       _cullMarkers = cullMarkers,
+       _spriteSizeInMeters = spriteSizeInMeters;
 
   /// Recognizes taps for markers.
   late final TapGestureRecognizer _tapGestureRecognizer =
@@ -88,6 +92,14 @@ class RenderSpriteMarkerLayer extends RenderBox {
     }
   }
 
+  bool get spriteSizeInMeters => _spriteSizeInMeters;
+  set spriteSizeInMeters(bool value) {
+    if (_spriteSizeInMeters != value) {
+      _spriteSizeInMeters = value;
+      markNeedsPaint();
+    }
+  }
+
   @override
   void performLayout() {
     size = constraints.biggest;
@@ -117,6 +129,16 @@ class RenderSpriteMarkerLayer extends RenderBox {
     return _markers.where((marker) {
       return bounds.contains(marker.position);
     }).toList();
+  }
+
+  /// Converts a distance in meters to screen pixels at the given [point].
+  double _metersToPixels(LatLng point, double meters) {
+    final south = const Distance().offset(point, meters, 180);
+
+    final p1 = camera.getOffsetFromOrigin(point);
+    final p2 = camera.getOffsetFromOrigin(south);
+
+    return (p1 - p2).distance;
   }
 
   /// Draws all visible sprites using the efficient drawRawAtlas method.
@@ -154,7 +176,12 @@ class RenderSpriteMarkerLayer extends RenderBox {
 
       if (!totalRotation.isFinite) continue;
 
-      final double scale = marker.scale;
+      final double scale = _spriteSizeInMeters
+          // Treat 1 sprite pixel as 1 meter.
+          // So a 48px-wide sprite will represent 48 meters when marker.scale==1.
+          ? (marker.scale * _metersToPixels(marker.position, 2))
+          : marker.scale;
+         
       if (scale <= 0) continue;
 
       final double dx = screenOffset.dx + offset.dx;

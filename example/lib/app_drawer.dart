@@ -11,6 +11,8 @@ import 'package:flutter_map_markers_example/demo_pages/simple_marker_demo_page.d
 import 'package:flutter_map_markers_example/demo_pages/sprites/aircraft_sprite_markers_demo_page.dart';
 import 'package:flutter_map_markers_example/demo_pages/sprites/simple_sprite_marker_demo_page.dart';
 import 'package:flutter_map_markers_example/demo_pages/sprites/sprite_layer_demo.dart';
+import 'package:flutter_map_markers_example/demo_pages/sprites/static_sprite_manager_demo.dart';
+import 'package:flutter_map_markers_example/demo_pages/sprites/static_sprite_marker_layer.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -167,6 +169,30 @@ class AppDrawer extends StatelessWidget {
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
                   builder: (context) => const SpriteLayerDemo(),
+                ),
+              );
+            },
+          ),
+           ListTile(
+            leading: const Icon(Icons.circle),
+            title: const Text('Static Sprite Manager Demo'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => const StaticSpriteManagerDemo(),
+                ),
+              );
+            },
+          ),
+           ListTile(
+            leading: const Icon(Icons.circle),
+            title: const Text('Static Sprite Marker Layer'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => const StaticSpriteMarkerLayerDemo(),
                 ),
               );
             },

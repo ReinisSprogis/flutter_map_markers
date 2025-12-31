@@ -17,11 +17,21 @@ class SpriteMarkerLayer extends StatelessWidget {
   /// Defaults to true for better performance.
   final bool cullMarkers;
 
+  /// If true, interprets the sprite's pixel dimensions as meters.
+  ///
+  /// Example: a 48x48 sprite will be rendered as a 48m x 48m object on the map
+  /// at the marker's latitude and current zoom.
+  ///
+  /// When false (default), [SpriteMarker.scale] behaves like a traditional
+  /// pixel scale factor (zoom-independent).
+  final bool spriteSizeInMeters;
+
   const SpriteMarkerLayer({
     super.key,
     required this.spriteAtlas,
     required this.markers,
     this.cullMarkers = true,
+    this.spriteSizeInMeters = false,
   });
 
   @override
@@ -33,6 +43,7 @@ class SpriteMarkerLayer extends StatelessWidget {
         markers: markers,
         camera: camera,
         cullMarkers: cullMarkers,
+        spriteSizeInMeters: spriteSizeInMeters,
       ),
     );
   }

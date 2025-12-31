@@ -60,6 +60,34 @@ import 'package:latlong2/latlong.dart';
 
 <h2>Usage</h2>
 
+<h3>Sprite Markers (Atlas)</h3>
+
+<p>
+  The sprite marker layer renders markers from a sprite atlas using <code>drawRawAtlas</code>.
+  Use <code>AnimatedSpriteMarker</code> to animate through a cycle of atlas indices.
+</p>
+
+```dart
+final marker = AnimatedSpriteMarker(
+  id: 'heli_1',
+  position: LatLng(51.5, -0.12),
+  animationCycles: const [
+    [0, 1, 2, 3, 4, 5],
+    [6, 7, 8, 9],
+  ],
+  cycleIndex: 0, // which cycle to use
+
+  // New: pick a specific frame within the cycle (NOT the atlas index).
+  cycleFrameIndex: 3, // -> uses atlas frame 3 from the first cycle
+  animating: false, // keep it static (manual frame control)
+);
+
+// Later...
+marker.animate(fromFrameIndex: 0); // start animating from the first frame
+marker.stop(); // pause on current frame
+marker.resetAnimation(animate: true); // reset to first frame and play
+```
+
 <h3>Basic Example</h3>
 
 <p>Create a simple map with canvas markers:</p>

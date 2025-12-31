@@ -27,6 +27,7 @@ environment:
   flutter: ">=1.17.0"
 
 dependencies:
+  expandable_quadtree: ^0.1.1
   flutter:
     sdk: flutter
   flutter_map: ^8.2.2

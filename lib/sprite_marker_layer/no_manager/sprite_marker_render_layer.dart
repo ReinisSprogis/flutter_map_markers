@@ -9,6 +9,7 @@ class SpriteMarkerRenderLayer extends LeafRenderObjectWidget {
   final List<SpriteMarker> markers;
   final MapCamera camera;
   final bool cullMarkers;
+  final bool spriteSizeInMeters;
 
   const SpriteMarkerRenderLayer({
     super.key,
@@ -16,6 +17,7 @@ class SpriteMarkerRenderLayer extends LeafRenderObjectWidget {
     required this.markers,
     required this.camera,
     this.cullMarkers = true,
+    this.spriteSizeInMeters = false,
   });
 
   @override
@@ -25,6 +27,7 @@ class SpriteMarkerRenderLayer extends LeafRenderObjectWidget {
       markers: markers,
       camera: camera,
       cullMarkers: cullMarkers,
+      spriteSizeInMeters: spriteSizeInMeters,
     );
   }
 
@@ -37,6 +40,7 @@ class SpriteMarkerRenderLayer extends LeafRenderObjectWidget {
       ..spriteAtlas = spriteAtlas
       ..markers = markers
       ..camera = camera
-      ..cullMarkers = cullMarkers;
+      ..cullMarkers = cullMarkers
+      ..spriteSizeInMeters = spriteSizeInMeters;
   }
 }

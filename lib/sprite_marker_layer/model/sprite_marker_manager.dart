@@ -557,10 +557,10 @@ class SpriteMarkerManager extends ChangeNotifier {
   // Drawing
   // =========================
   final Paint paint = Paint()
-    ..isAntiAlias = true
+    ..isAntiAlias = false
     ..style = PaintingStyle.fill
     ..blendMode = BlendMode.srcOver
-    ..filterQuality = FilterQuality.high;
+    ..filterQuality = FilterQuality.none;
 
   void draw(Canvas canvas, Offset offset) {
     _flushPendingUpdatesForDraw();
@@ -640,14 +640,19 @@ class SpriteMarkerManager extends ChangeNotifier {
           rotation -= cameraRotation;
         }
 
+        // IMPORTANT:
+        // Avoid sprite-size-dependent culling here.
+        // Animated markers can change sprite dimensions per frame; when a
+        // marker is near the viewport edge this can cause overlap checks to
+        // oscillate, which then triggers full buffer rebuilds every few frames.
+        // That creates highly variable draw counts and can show up as raster
+        // thread spikes.
+        //
+        // In the incremental transform-update path, only force a full rebuild
+        // when the marker is *definitely* outside the viewport using a stable
+        // max-sprite-size bound.
         if (cullMarkers &&
-            !_spriteAabbOverlapsViewport(
-              screen: screen,
-              spriteWidth: sprite.width.toDouble(),
-              spriteHeight: sprite.height.toDouble(),
-              scale: scale,
-              anchor: marker.anchor,
-            )) {
+            _definitelyOutsideViewport(screen: screen, scale: scale)) {
           needsFullRebuild = true;
           break;
         }

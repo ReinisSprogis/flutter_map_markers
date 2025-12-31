@@ -144,7 +144,7 @@ class _AircraftSpriteMarkerDemoPageState
       _markers = List<StaticSpriteMarker>.generate(count, (index) {
         //rotation in radians
         double rotation = random.nextDouble() * 2 * pi;
-        double scale = 0.5 + random.nextDouble() * 0.3;
+        double scale = 0.5;// + random.nextDouble() * 0.3;
         final position = Utility.clusterPoint(
           london,
           random,
@@ -213,9 +213,9 @@ class _AircraftSpriteMarkerDemoPageState
                     initialZoom: 5,
                     maxZoom: 18,
                     minZoom: 1,
-                    onPointerHover: (event, point) {
-                      _addSingleSprite(point);
-                    },
+                    // onPointerHover: (event, point) {
+                    //   _addSingleSprite(point);
+                    // },
                   ),
                   children: [
                     TileLayer(
