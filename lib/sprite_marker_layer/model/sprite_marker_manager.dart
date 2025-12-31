@@ -22,9 +22,43 @@ class SpriteMarkerManager extends ChangeNotifier {
   /// This is used for accurate screen-space culling and to detect resizes.
   Size _viewportSize = Size.zero;
 
-  SpriteMarkerManager({required this.spriteAtlas});
+  SpriteMarkerManager({required this.spriteAtlas})
+    : _maxSpriteSize = _computeMaxSpriteSize(spriteAtlas);
+
+  final Size _maxSpriteSize;
 
   final SpriteAtlas spriteAtlas;
+
+  static Size _computeMaxSpriteSize(SpriteAtlas atlas) {
+    double maxW = 0;
+    double maxH = 0;
+    for (final s in atlas.sprites) {
+      if (s.width > maxW) maxW = s.width;
+      if (s.height > maxH) maxH = s.height;
+    }
+    return Size(maxW, maxH);
+  }
+
+  bool _definitelyOutsideViewport({
+    required Offset screen,
+    required double scale,
+  }) {
+    final Size viewportSize = _viewportSize;
+    if (viewportSize.isEmpty) return false;
+    if (!scale.isFinite || scale <= 0) return true;
+
+    final double maxW = _maxSpriteSize.width;
+    final double maxH = _maxSpriteSize.height;
+    if (maxW <= 0 || maxH <= 0) return false;
+
+    final double mx = maxW * scale;
+    final double my = maxH * scale;
+
+    return screen.dx < -mx ||
+        screen.dx > viewportSize.width + mx ||
+        screen.dy < -my ||
+        screen.dy > viewportSize.height + my;
+  }
 
   /// Marker storage
   final Map<Object, SpriteMarker> _markers = {};
@@ -39,19 +73,13 @@ class SpriteMarkerManager extends ChangeNotifier {
   /// would not be visible.
   bool cullMarkers = true;
 
-  /// During active panning, rebuilding the visible marker buffer by scanning all
-  /// markers can be expensive at high marker counts.
+  /// When [cullMarkers] is enabled, controls which culling strategy is used.
   ///
-  /// If > 0, full visibility rebuilds will be throttled to at most once per
-  /// this interval while the camera is only translating (zoom & rotation
-  /// unchanged). Between rebuilds, the cached transforms are shifted by the
-  /// camera translation delta.
-  int cameraPanRebuildIntervalMs = 150;
-
-  int _lastFullRebuildMs = 0;
-  bool _needsPanShift = false;
-  double _pendingPanDx = 0.0;
-  double _pendingPanDy = 0.0;
+  /// - When false (default): uses a cheaper conservative screen-space bound.
+  ///   This avoids `sqrt` per marker and is usually sufficient.
+  /// - When true: uses a tighter (more precise) bound that costs a little more
+  ///   per marker.
+  bool advancedCulling = false;
 
   /// Update the viewport size used for culling.
   ///
@@ -61,9 +89,14 @@ class SpriteMarkerManager extends ChangeNotifier {
     _viewportSize = size;
     // Viewport changed (resize): cached visibility set is invalid.
     _needsCameraRebuild = true;
-    _needsPanShift = false;
-    _pendingPanDx = 0.0;
-    _pendingPanDy = 0.0;
+    notifyListeners();
+  }
+
+  /// Forces a full visibility rebuild on the next draw.
+  void rebuildVisibility() {
+    final currentCamera = camera;
+    if (currentCamera == null) return;
+    _needsCameraRebuild = true;
     notifyListeners();
   }
 
@@ -221,6 +254,12 @@ class SpriteMarkerManager extends ChangeNotifier {
     final screen = currentCamera.getOffsetFromOrigin(marker.position);
     if (!screen.dx.isFinite || !screen.dy.isFinite) return false;
 
+    final double scale = marker.scale;
+    if (cullMarkers &&
+        _definitelyOutsideViewport(screen: screen, scale: scale)) {
+      return false;
+    }
+
     final int spriteIndex = _resolveSpriteIndexAtTime(marker);
     final sprite = spriteAtlas.getSpriteInfo(spriteIndex);
     if (sprite.width <= 0 || sprite.height <= 0) return false;
@@ -231,16 +270,12 @@ class SpriteMarkerManager extends ChangeNotifier {
           spriteWidth: sprite.width.toDouble(),
           spriteHeight: sprite.height.toDouble(),
           scale: marker.scale,
-          rotation: marker.rotate
-              ? (marker.rotation - currentCamera.rotationRad)
-              : marker.rotation,
           anchor: marker.anchor,
         )) {
       return false;
     }
 
     double rotation = marker.rotation;
-    final double scale = marker.scale;
     final bool rotate = marker.rotate;
 
     if (rotate) {
@@ -330,47 +365,8 @@ class SpriteMarkerManager extends ChangeNotifier {
     // instance that carries identical values.
     if (old != null && _sameCameraValues(old, newCamera)) return;
 
-    // If we don't have a previous camera or buffers yet, do the safe thing.
-    if (old == null || _writeCount == 0) {
-      _needsCameraRebuild = true;
-      _needsPanShift = false;
-      _pendingPanDx = 0.0;
-      _pendingPanDy = 0.0;
-      notifyListeners();
-      return;
-    }
-
-    // If zoom or rotation changed, the translation-delta shortcut is invalid.
-    final bool zoomOrRotationChanged =
-        old.zoom != newCamera.zoom || old.rotationRad != newCamera.rotationRad;
-    if (zoomOrRotationChanged) {
-      _needsCameraRebuild = true;
-      _needsPanShift = false;
-      _pendingPanDx = 0.0;
-      _pendingPanDy = 0.0;
-      notifyListeners();
-      return;
-    }
-
-    // Pure pan: shift cached transforms by a constant delta instead of
-    // rebuilding by scanning all markers.
-    final ref = const coord.LatLng(0, 0);
-    final Offset oldRef = old.getOffsetFromOrigin(ref);
-    final Offset newRef = newCamera.getOffsetFromOrigin(ref);
-    final double dx = newRef.dx - oldRef.dx;
-    final double dy = newRef.dy - oldRef.dy;
-
-    if (dx.isFinite && dy.isFinite && (dx != 0.0 || dy != 0.0)) {
-      _pendingPanDx += dx;
-      _pendingPanDy += dy;
-      _needsPanShift = true;
-    }
-
-    final int nowMs = DateTime.now().millisecondsSinceEpoch;
-    if (cameraPanRebuildIntervalMs > 0 &&
-        nowMs - _lastFullRebuildMs >= cameraPanRebuildIntervalMs) {
-      _needsCameraRebuild = true;
-    }
+    // Rebuild visibility on every camera change.
+    _needsCameraRebuild = true;
 
     notifyListeners();
   }
@@ -398,7 +394,7 @@ class SpriteMarkerManager extends ChangeNotifier {
     }
 
     _needsTransformUpdate = true;
-    notifyListeners();
+    //notifyListeners();
   }
 
   // =========================
@@ -419,13 +415,29 @@ class SpriteMarkerManager extends ChangeNotifier {
       final screen = worldToScreen(marker.position);
       if (!screen.dx.isFinite || !screen.dy.isFinite) continue;
 
+      final double scale = marker.scale;
+      if (cullMarkers &&
+          _definitelyOutsideViewport(screen: screen, scale: scale)) {
+        continue;
+      }
+
       final int spriteIndex = _resolveSpriteIndexAtTime(marker);
       final sprite = spriteAtlas.getSpriteInfo(spriteIndex);
       if (sprite.width <= 0 || sprite.height <= 0) continue;
 
+      if (cullMarkers &&
+          !_spriteAabbOverlapsViewport(
+            screen: screen,
+            spriteWidth: sprite.width.toDouble(),
+            spriteHeight: sprite.height.toDouble(),
+            scale: scale,
+            anchor: marker.anchor,
+          )) {
+        continue;
+      }
+
       // All SpriteMarkers have these properties from the base class
       double rotation = marker.rotation;
-      double scale = marker.scale;
       bool rotate = marker.rotate;
 
       // When rotate=true, counter-rotate to keep marker upright
@@ -476,22 +488,21 @@ class SpriteMarkerManager extends ChangeNotifier {
     _ensureCapacity(_markers.length);
     _writeCount = 0;
 
-    // Full rebuild replaces the buffered coordinate space; discard pan shifts.
-    _needsPanShift = false;
-    _pendingPanDx = 0.0;
-    _pendingPanDy = 0.0;
-    _lastFullRebuildMs = DateTime.now().millisecondsSinceEpoch;
-
     for (final marker in _markers.values) {
       final screen = worldToScreen(marker.position);
       if (!screen.dx.isFinite || !screen.dy.isFinite) continue;
+
+      final double scale = marker.scale;
+      if (cullMarkers &&
+          _definitelyOutsideViewport(screen: screen, scale: scale)) {
+        continue;
+      }
 
       final int spriteIndex = _resolveSpriteIndexAtTime(marker);
       final sprite = spriteAtlas.getSpriteInfo(spriteIndex);
       if (sprite.width <= 0 || sprite.height <= 0) continue;
 
       double rotation = marker.rotation;
-      final double scale = marker.scale;
       final bool rotate = marker.rotate;
 
       if (rotate) {
@@ -504,7 +515,6 @@ class SpriteMarkerManager extends ChangeNotifier {
             spriteWidth: sprite.width.toDouble(),
             spriteHeight: sprite.height.toDouble(),
             scale: scale,
-            rotation: rotation,
             anchor: marker.anchor,
           )) {
         continue;
@@ -596,20 +606,6 @@ class SpriteMarkerManager extends ChangeNotifier {
       return;
     }
 
-    // Fast-path for pure pan: shift cached transforms by a constant delta.
-    if (_needsPanShift && (_pendingPanDx != 0.0 || _pendingPanDy != 0.0)) {
-      final double dx = _pendingPanDx;
-      final double dy = _pendingPanDy;
-      for (int i = 0; i < _writeCount; i++) {
-        final int base = i * 4;
-        _transforms[base + 2] = _transforms[base + 2] + dx;
-        _transforms[base + 3] = _transforms[base + 3] + dy;
-      }
-      _pendingPanDx = 0.0;
-      _pendingPanDy = 0.0;
-      _needsPanShift = false;
-    }
-
     if (_writeCount == 0) {
       _needsTransformUpdate = false;
       _needsRectUpdate = false;
@@ -650,7 +646,6 @@ class SpriteMarkerManager extends ChangeNotifier {
               spriteWidth: sprite.width.toDouble(),
               spriteHeight: sprite.height.toDouble(),
               scale: scale,
-              rotation: rotation,
               anchor: marker.anchor,
             )) {
           needsFullRebuild = true;
@@ -737,7 +732,6 @@ class SpriteMarkerManager extends ChangeNotifier {
     required double spriteWidth,
     required double spriteHeight,
     required double scale,
-    required double rotation,
     required Alignment anchor,
   }) {
     final Size viewportSize = _viewportSize;
@@ -747,7 +741,6 @@ class SpriteMarkerManager extends ChangeNotifier {
     }
 
     if (!scale.isFinite || scale <= 0) return false;
-    if (!rotation.isFinite) return false;
 
     // Convert Alignment (-1..1) to anchor in sprite pixels (0..w/h).
     final double anchorX = spriteWidth * (anchor.x + 1.0) / 2.0;
@@ -759,47 +752,40 @@ class SpriteMarkerManager extends ChangeNotifier {
     final double x1 = (spriteWidth - anchorX) * scale;
     final double y1 = (spriteHeight - anchorY) * scale;
 
-    final double c = cos(rotation);
-    final double s = sin(rotation);
+    // Cheap conservative culling: use a rotation-safe bound without sqrt.
+    //
+    // We take the maximum distances from the anchor to sprite edges in X/Y and
+    // convert it into a conservative "radius" using Manhattan norm:
+    // r = maxAbsX + maxAbsY >= sqrt(maxAbsX^2 + maxAbsY^2)
+    // This avoids premature disappearance for rotated markers.
+    if (!advancedCulling) {
+      final double maxAbsX = max(x0.abs(), x1.abs());
+      final double maxAbsY = max(y0.abs(), y1.abs());
+      final double r = maxAbsX + maxAbsY;
 
-    // Rotate 4 corners.
-    final double rx0 = x0 * c - y0 * s;
-    final double ry0 = x0 * s + y0 * c;
+      if (screen.dx + r < 0 ||
+          screen.dx - r > viewportSize.width ||
+          screen.dy + r < 0 ||
+          screen.dy - r > viewportSize.height) {
+        return false;
+      }
+      return true;
+    }
 
-    final double rx1 = x1 * c - y0 * s;
-    final double ry1 = x1 * s + y0 * c;
-
-    final double rx2 = x1 * c - y1 * s;
-    final double ry2 = x1 * s + y1 * c;
-
-    final double rx3 = x0 * c - y1 * s;
-    final double ry3 = x0 * s + y1 * c;
-
-    double minX = rx0;
-    double maxX = rx0;
-    double minY = ry0;
-    double maxY = ry0;
-
-    if (rx1 < minX) minX = rx1;
-    if (rx1 > maxX) maxX = rx1;
-    if (ry1 < minY) minY = ry1;
-    if (ry1 > maxY) maxY = ry1;
-
-    if (rx2 < minX) minX = rx2;
-    if (rx2 > maxX) maxX = rx2;
-    if (ry2 < minY) minY = ry2;
-    if (ry2 > maxY) maxY = ry2;
-
-    if (rx3 < minX) minX = rx3;
-    if (rx3 > maxX) maxX = rx3;
-    if (ry3 < minY) minY = ry3;
-    if (ry3 > maxY) maxY = ry3;
+    // Conservative bound: take the maximum distance from the anchor to any
+    // corner (independent of rotation), and use that as a circle radius.
+    // This avoids per-marker trig while preventing premature disappearance.
+    final double d0 = x0 * x0 + y0 * y0;
+    final double d1 = x1 * x1 + y0 * y0;
+    final double d2 = x1 * x1 + y1 * y1;
+    final double d3 = x0 * x0 + y1 * y1;
+    final double radius = sqrt(max(max(d0, d1), max(d2, d3)));
 
     final Rect markerAabb = Rect.fromLTRB(
-      screen.dx + minX,
-      screen.dy + minY,
-      screen.dx + maxX,
-      screen.dy + maxY,
+      screen.dx - radius,
+      screen.dy - radius,
+      screen.dx + radius,
+      screen.dy + radius,
     );
 
     final Rect viewport = Rect.fromLTWH(
