@@ -130,12 +130,7 @@ class _SimpleSpriteMarkerDemoPageState extends State<SimpleSpriteMarkerDemoPage>
 
   Future<void> _loadAtlas() async {
     final spriteAtlas = await _getAtlas();
-    _markerManager = SpriteMarkerManager(
-      spriteCycles: [
-        [0, 1],
-      ],
-      spriteAtlas: spriteAtlas,
-    );
+    _markerManager = SpriteMarkerManager(spriteAtlas: spriteAtlas);
     _generateSprites(1);
   }
 

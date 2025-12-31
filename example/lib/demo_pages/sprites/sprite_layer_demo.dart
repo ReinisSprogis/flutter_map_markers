@@ -41,9 +41,8 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
               _animationController.lastElapsedDuration?.inMilliseconds ?? 0;
           final int deltaTime = nowMs - lastTime;
           lastTime = nowMs;
-          setState(() {
-            _markerManager?.tick(deltaTime);
-          });
+
+          _markerManager?.tick(deltaTime, markersMoved: true);
         });
 
     Future.microtask(() async {
@@ -62,14 +61,15 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
     return spriteAtlas;
   }
 
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadAtlas() async {
     _spriteAtlas = await _getAtlas();
-    _markerManager = SpriteMarkerManager(
-      spriteAtlas: _spriteAtlas!,
-      spriteCycles: [
-        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-      ],
-    );
+    _markerManager = SpriteMarkerManager(spriteAtlas: _spriteAtlas!);
     _generateSprites(1);
   }
 
@@ -81,7 +81,6 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
     setState(() {
       markers = List<AnimatedSpriteMarker>.generate(count, (index) {
         //rotation in radians
-        
 
         final position = Utility.clusterPoint(
           london,
@@ -98,6 +97,9 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
           anchor: Alignment.bottomCenter,
           position: position,
           cycleIndex: 0,
+          // Example: pin the first marker to a specific frame.
+          cycleFrameIndex: random.nextInt(10),
+          animating: true,
           animationCycles: [
             [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
           ],

@@ -10,6 +10,7 @@ class SpriteMarkerManagerLayer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final camera = MapCamera.of(context);
+    final size = MediaQuery.sizeOf(context);
 
     // Always forward the camera; the manager will skip rebuilds when values
     // are unchanged.

@@ -15,18 +15,10 @@ import 'package:latlong2/latlong.dart' as coord;
 
 class SpriteMarkerManager extends ChangeNotifier {
   MapCamera? camera;
-  List<SpriteMarker> markers;
 
-  SpriteMarkerManager({
-    required this.spriteCycles,
-    required this.spriteAtlas,
-    this.markers = const [],
-  });
+  SpriteMarkerManager({required this.spriteAtlas});
 
   final SpriteAtlas spriteAtlas;
-
-  /// Sprite animation cycles from atlas
-  final List<List<int>> spriteCycles;
 
   /// Marker storage
   final Map<Object, SpriteMarker> _markers = {};
@@ -153,7 +145,6 @@ class SpriteMarkerManager extends ChangeNotifier {
   void clearMarkers() {
     _markers.clear();
     _animStates.clear();
-    markers = const [];
     _writeCount = 0;
     _needsCameraRebuild = false;
     _needsTransformUpdate = false;
@@ -179,7 +170,7 @@ class SpriteMarkerManager extends ChangeNotifier {
         _animStates.putIfAbsent(marker.id, () => _AnimState());
       }
     }
-    markers = _markers.values.toList();
+
     final currentCamera = camera;
     if (currentCamera == null) {
       notifyListeners();
@@ -285,12 +276,6 @@ class SpriteMarkerManager extends ChangeNotifier {
 
     // Coalesce work to paint(): tick just marks dirty and schedules repaint.
     notifyListeners();
-  }
-
-  /// Backwards-compatible alias: advances animation frames.
-  /// Prefer [tick].
-  void update(int deltaTime) {
-    tick(deltaTime);
   }
 
   void updateCamera(MapCamera newCamera) {
@@ -631,7 +616,6 @@ class SpriteMarkerManager extends ChangeNotifier {
         a.center == b.center;
   }
 
-  final Random _random = Random();
   int _resolveSpriteIndexAtTime(SpriteMarker marker) {
     if (marker is StaticSpriteMarker) {
       return marker.spriteIndex;
@@ -643,49 +627,58 @@ class SpriteMarkerManager extends ChangeNotifier {
 
     final AnimatedSpriteMarker m = marker;
 
-    // Prefer per-marker cycles (AnimatedSpriteMarker.animationCycles).
-    // Fall back to manager-provided cycles if marker doesn't define them.
-    final List<List<int>> cycles = m.animationCycles.isNotEmpty
-        ? m.animationCycles
-        : spriteCycles;
+    final List<List<int>> cycles = m.animationCycles;
     if (cycles.isEmpty) return 0;
     final int safeCycleIndex =
         (m.cycleIndex >= 0 && m.cycleIndex < cycles.length) ? m.cycleIndex : 0;
     final frames = cycles[safeCycleIndex];
     if (frames.isEmpty) return 0;
 
+    final int frameCount = frames.length;
+    final int startFrameIndex =
+        (m.cycleFrameIndex >= 0 && m.cycleFrameIndex < frameCount)
+        ? m.cycleFrameIndex
+        : 0;
+
+    if (!m.animating) {
+      return frames[startFrameIndex];
+    }
+
     final state = _animStates[m.id];
-    if (state == null) return frames.first;
+    if (state == null) return frames[startFrameIndex];
 
     final double t = state._effectiveTime(
       nowSeconds: _clockSeconds,
-      playing: m.playing,
+      playing: m.animating,
     );
 
-    final int frameCount = frames.length;
     final int raw = (t * m.fps).floor();
+    final int step = raw + startFrameIndex;
 
     switch (m.mode) {
       case AnimationMode.loop:
-        return frames[raw % frameCount];
+        return frames[step % frameCount];
 
       case AnimationMode.once:
-        if (raw >= frameCount) {
+        if (step >= frameCount) {
           state.finished = true;
           return frames.last;
         }
-        return frames[raw];
+        return frames[step];
 
       case AnimationMode.reverse:
-        return frames[frameCount - 1 - (raw % frameCount)];
+        return frames[frameCount - 1 - (step % frameCount)];
 
       case AnimationMode.pingPong:
-        final cycle = raw ~/ frameCount;
-        final idx = raw % frameCount;
+        final cycle = step ~/ frameCount;
+        final idx = step % frameCount;
         return frames[cycle.isEven ? idx : frameCount - 1 - idx];
 
       case AnimationMode.random:
-        return frames[_random.nextInt(frameCount)];
+        // Stable per marker+frame-step to avoid visible flicker.
+        final int seed = Object.hash(m.id, step);
+        final int idx = seed.abs() % frameCount;
+        return frames[idx];
     }
   }
 
@@ -727,7 +720,6 @@ class SpriteMarkerManager extends ChangeNotifier {
     _bufferMarkers = newBufferMarkers;
     _capacity = newCapacity;
   }
-
 }
 
 class _AnimState {
