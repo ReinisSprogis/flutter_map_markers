@@ -52,6 +52,7 @@ class SpriteMarkerRenderBox extends RenderBox {
   @override
   void performLayout() {
     size = constraints.biggest;
+    _markerManager.updateViewportSize(size);
   }
 
   @override

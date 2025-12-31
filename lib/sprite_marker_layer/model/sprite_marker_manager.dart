@@ -5,6 +5,7 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/animated_sprite_marker.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/animation_mode.dart';
@@ -15,6 +16,11 @@ import 'package:latlong2/latlong.dart' as coord;
 
 class SpriteMarkerManager extends ChangeNotifier {
   MapCamera? camera;
+
+  /// Viewport size of the render box that draws this manager.
+  ///
+  /// This is used for accurate screen-space culling and to detect resizes.
+  Size _viewportSize = Size.zero;
 
   SpriteMarkerManager({required this.spriteAtlas});
 
@@ -32,6 +38,17 @@ class SpriteMarkerManager extends ChangeNotifier {
   /// This is a UI-thread optimization; it avoids generating atlas entries that
   /// would not be visible.
   bool cullMarkers = true;
+
+  /// Update the viewport size used for culling.
+  ///
+  /// This should be called by the render object during layout.
+  void updateViewportSize(Size size) {
+    if (_viewportSize == size) return;
+    _viewportSize = size;
+    // Viewport changed (resize): cached visibility set is invalid.
+    _needsCameraRebuild = true;
+    notifyListeners();
+  }
 
   // =========================
   // Render buffers (cached)
@@ -184,16 +201,26 @@ class SpriteMarkerManager extends ChangeNotifier {
   }
 
   bool _tryAppendVisibleToBuffer(SpriteMarker marker, MapCamera currentCamera) {
-    if (cullMarkers && !currentCamera.visibleBounds.contains(marker.position)) {
-      return false;
-    }
-
     final screen = currentCamera.getOffsetFromOrigin(marker.position);
     if (!screen.dx.isFinite || !screen.dy.isFinite) return false;
 
     final int spriteIndex = _resolveSpriteIndexAtTime(marker);
     final sprite = spriteAtlas.getSpriteInfo(spriteIndex);
     if (sprite.width <= 0 || sprite.height <= 0) return false;
+
+    if (cullMarkers &&
+        !_spriteAabbOverlapsViewport(
+          screen: screen,
+          spriteWidth: sprite.width.toDouble(),
+          spriteHeight: sprite.height.toDouble(),
+          scale: marker.scale,
+          rotation: marker.rotate
+              ? (marker.rotation - currentCamera.rotationRad)
+              : marker.rotation,
+          anchor: marker.anchor,
+        )) {
+      return false;
+    }
 
     double rotation = marker.rotation;
     final double scale = marker.scale;
@@ -388,7 +415,6 @@ class SpriteMarkerManager extends ChangeNotifier {
     // We build in local layer coordinates (offset applied at draw time via
     // canvas.translate), so we don't need to rebuild just because the RenderBox
     // paint offset changed.
-    final bounds = camera.visibleBounds;
     final worldToScreen = camera.getOffsetFromOrigin;
     final cameraRotation = camera.rotationRad;
 
@@ -396,10 +422,6 @@ class SpriteMarkerManager extends ChangeNotifier {
     _writeCount = 0;
 
     for (final marker in _markers.values) {
-      if (cullMarkers && !bounds.contains(marker.position)) {
-        continue;
-      }
-
       final screen = worldToScreen(marker.position);
       if (!screen.dx.isFinite || !screen.dy.isFinite) continue;
 
@@ -413,6 +435,18 @@ class SpriteMarkerManager extends ChangeNotifier {
 
       if (rotate) {
         rotation -= cameraRotation;
+      }
+
+      if (cullMarkers &&
+          !_spriteAabbOverlapsViewport(
+            screen: screen,
+            spriteWidth: sprite.width.toDouble(),
+            spriteHeight: sprite.height.toDouble(),
+            scale: scale,
+            rotation: rotation,
+            anchor: marker.anchor,
+          )) {
+        continue;
       }
 
       if (!rotation.isFinite || !scale.isFinite || scale <= 0) continue;
@@ -508,7 +542,6 @@ class SpriteMarkerManager extends ChangeNotifier {
     }
 
     if (_needsTransformUpdate) {
-      final bounds = currentCamera.visibleBounds;
       final worldToScreen = currentCamera.getOffsetFromOrigin;
       final cameraRotation = currentCamera.rotationRad;
 
@@ -517,11 +550,6 @@ class SpriteMarkerManager extends ChangeNotifier {
       for (int i = 0; i < _writeCount; i++) {
         final marker = _bufferMarkers[i];
         if (marker == null) continue;
-
-        if (cullMarkers && !bounds.contains(marker.position)) {
-          needsFullRebuild = true;
-          break;
-        }
 
         final screen = worldToScreen(marker.position);
         if (!screen.dx.isFinite || !screen.dy.isFinite) {
@@ -539,6 +567,19 @@ class SpriteMarkerManager extends ChangeNotifier {
 
         if (rotate) {
           rotation -= cameraRotation;
+        }
+
+        if (cullMarkers &&
+            !_spriteAabbOverlapsViewport(
+              screen: screen,
+              spriteWidth: sprite.width.toDouble(),
+              spriteHeight: sprite.height.toDouble(),
+              scale: scale,
+              rotation: rotation,
+              anchor: marker.anchor,
+            )) {
+          needsFullRebuild = true;
+          break;
         }
 
         if (!rotation.isFinite || !scale.isFinite || scale <= 0) continue;
@@ -614,6 +655,86 @@ class SpriteMarkerManager extends ChangeNotifier {
     return a.zoom == b.zoom &&
         a.rotationRad == b.rotationRad &&
         a.center == b.center;
+  }
+
+  bool _spriteAabbOverlapsViewport({
+    required Offset screen,
+    required double spriteWidth,
+    required double spriteHeight,
+    required double scale,
+    required double rotation,
+    required Alignment anchor,
+  }) {
+    final Size viewportSize = _viewportSize;
+    if (viewportSize.isEmpty) {
+      // If we don't know the viewport yet, avoid culling.
+      return true;
+    }
+
+    if (!scale.isFinite || scale <= 0) return false;
+    if (!rotation.isFinite) return false;
+
+    // Convert Alignment (-1..1) to anchor in sprite pixels (0..w/h).
+    final double anchorX = spriteWidth * (anchor.x + 1.0) / 2.0;
+    final double anchorY = spriteHeight * (anchor.y + 1.0) / 2.0;
+
+    // Corners relative to anchor, scaled.
+    final double x0 = (-anchorX) * scale;
+    final double y0 = (-anchorY) * scale;
+    final double x1 = (spriteWidth - anchorX) * scale;
+    final double y1 = (spriteHeight - anchorY) * scale;
+
+    final double c = cos(rotation);
+    final double s = sin(rotation);
+
+    // Rotate 4 corners.
+    final double rx0 = x0 * c - y0 * s;
+    final double ry0 = x0 * s + y0 * c;
+
+    final double rx1 = x1 * c - y0 * s;
+    final double ry1 = x1 * s + y0 * c;
+
+    final double rx2 = x1 * c - y1 * s;
+    final double ry2 = x1 * s + y1 * c;
+
+    final double rx3 = x0 * c - y1 * s;
+    final double ry3 = x0 * s + y1 * c;
+
+    double minX = rx0;
+    double maxX = rx0;
+    double minY = ry0;
+    double maxY = ry0;
+
+    if (rx1 < minX) minX = rx1;
+    if (rx1 > maxX) maxX = rx1;
+    if (ry1 < minY) minY = ry1;
+    if (ry1 > maxY) maxY = ry1;
+
+    if (rx2 < minX) minX = rx2;
+    if (rx2 > maxX) maxX = rx2;
+    if (ry2 < minY) minY = ry2;
+    if (ry2 > maxY) maxY = ry2;
+
+    if (rx3 < minX) minX = rx3;
+    if (rx3 > maxX) maxX = rx3;
+    if (ry3 < minY) minY = ry3;
+    if (ry3 > maxY) maxY = ry3;
+
+    final Rect markerAabb = Rect.fromLTRB(
+      screen.dx + minX,
+      screen.dy + minY,
+      screen.dx + maxX,
+      screen.dy + maxY,
+    );
+
+    final Rect viewport = Rect.fromLTWH(
+      0,
+      0,
+      viewportSize.width,
+      viewportSize.height,
+    );
+
+    return markerAabb.overlaps(viewport);
   }
 
   int _resolveSpriteIndexAtTime(SpriteMarker marker) {
