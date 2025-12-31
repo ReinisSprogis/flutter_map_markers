@@ -192,7 +192,7 @@ class AppDrawer extends StatelessWidget {
               Navigator.pop(context);
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
-                  builder: (context) => const StaticSpriteMarkerLayerDemo(),
+                  builder: (context) => const SpriteMarkerFrameLayerDemo(),
                 ),
               );
             },

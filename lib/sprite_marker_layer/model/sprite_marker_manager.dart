@@ -7,11 +7,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/model/animated_sprite_marker.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/model/markers/sprite_marker_sequence.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/animation_mode.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/model/markers/sprite_marker_frame.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_marker.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/model/static_sprite_marker.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/model/markers/sprite_marker.dart';
+
 import 'package:latlong2/latlong.dart' as coord;
 
 class SpriteMarkerManager extends ChangeNotifier {
@@ -149,7 +150,7 @@ class SpriteMarkerManager extends ChangeNotifier {
     final existing = _markers[id];
     _markers[id] = marker;
 
-    if (marker is AnimatedSpriteMarker) {
+    if (marker is SpriteMarkerSequence) {
       _animStates.putIfAbsent(
         id,
         () => _AnimState(startSeconds: _clockSeconds),
@@ -233,7 +234,7 @@ class SpriteMarkerManager extends ChangeNotifier {
     // add / update
     for (final marker in incoming) {
       _markers[marker.id] = marker;
-      if (marker is AnimatedSpriteMarker) {
+      if (marker is SpriteMarkerSequence) {
         _animStates.putIfAbsent(marker.id, () => _AnimState());
       }
     }
@@ -691,7 +692,7 @@ class SpriteMarkerManager extends ChangeNotifier {
       for (int i = 0; i < _writeCount; i++) {
         final marker = _bufferMarkers[i];
         if (marker == null) continue;
-        if (marker is! AnimatedSpriteMarker) continue;
+        if (marker is! SpriteMarkerSequence) continue;
 
         final int newSpriteIndex = _resolveSpriteIndexAtTime(marker);
         if (_bufferSpriteIndices[i] == newSpriteIndex) continue;
@@ -804,15 +805,15 @@ class SpriteMarkerManager extends ChangeNotifier {
   }
 
   int _resolveSpriteIndexAtTime(SpriteMarker marker) {
-    if (marker is StaticSpriteMarker) {
+    if (marker is SpriteMarkerFrame) {
       return marker.spriteIndex;
     }
 
-    if (marker is! AnimatedSpriteMarker) {
+    if (marker is! SpriteMarkerSequence) {
       return marker.spriteIndex;
     }
 
-    final AnimatedSpriteMarker m = marker;
+    final SpriteMarkerSequence m = marker;
 
     final List<List<int>> cycles = m.animationCycles;
     if (cycles.isEmpty) return 0;

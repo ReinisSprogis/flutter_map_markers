@@ -1,15 +1,11 @@
 import 'dart:math';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/model/static_sprite_marker.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/no_manager/sprite_marker_layer.dart';
-
+import 'package:flutter_map_markers/flutter_map_markers.dart';
 import 'package:flutter_map_markers_example/app_drawer.dart';
 import 'package:flutter_map_markers_example/demo_pages/heli_2.dart';
 import 'package:flutter_map_markers_example/utility/utility.dart';
@@ -30,7 +26,7 @@ class _AircraftSpriteMarkerDemoPageState
     with SingleTickerProviderStateMixin {
   late final AnimationController _animationController;
   SpriteAtlas? _spriteAtlas;
-  List<StaticSpriteMarker> _markers = [];
+  List<SpriteMarkerFrame> _markers = [];
   int markerCount = 1;
   final double minSpeed = 0.00008;
   final double maxSpeed = 0.0008;
@@ -97,7 +93,7 @@ class _AircraftSpriteMarkerDemoPageState
         newLng = marker.position.longitude.clamp(minLng, maxLng);
       }
 
-      _markers[i] = StaticSpriteMarker(
+      _markers[i] = SpriteMarkerFrame(
         id: marker.id,
         position: LatLng(newLat, newLng),
         spriteIndex: frameIndex,
@@ -141,7 +137,7 @@ class _AircraftSpriteMarkerDemoPageState
     //random rotation and scale for each marker
 
     setState(() {
-      _markers = List<StaticSpriteMarker>.generate(count, (index) {
+      _markers = List<SpriteMarkerFrame>.generate(count, (index) {
         //rotation in radians
         double rotation = random.nextDouble() * 2 * pi;
         double scale = 0.5;// + random.nextDouble() * 0.3;
@@ -150,7 +146,7 @@ class _AircraftSpriteMarkerDemoPageState
           random,
           maxDistance: 10.0,
         );
-        return StaticSpriteMarker(
+        return SpriteMarkerFrame(
           id: 'marker_$index',
           scale: scale,
           rotate: true,
@@ -184,7 +180,7 @@ class _AircraftSpriteMarkerDemoPageState
 
     setState(() {
       _markers.add(
-        StaticSpriteMarker(
+        SpriteMarkerFrame(
           id: 'marker_${_markers.length}',
           rotate: false,
           scale: scale,

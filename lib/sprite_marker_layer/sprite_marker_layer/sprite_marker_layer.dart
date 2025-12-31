@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_marker.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/model/markers/sprite_marker.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/no_manager/sprite_marker_render_layer.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/sprite_marker_layer/sprite_marker_layer_leaf.dart';
 
 /// A layer that displays a list of [SpriteMarker]s on a FlutterMap using
 /// efficient sprite atlas rendering for optimal performance with many markers.

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_marker.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/model/markers/sprite_marker.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/no_manager/render_sprite_marker_layer.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/sprite_marker_layer/sprite_marker_layer_render_box.dart';
 
 class SpriteMarkerRenderLayer extends LeafRenderObjectWidget {
   final SpriteAtlas spriteAtlas;

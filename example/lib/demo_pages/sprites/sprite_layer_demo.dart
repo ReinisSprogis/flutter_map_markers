@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/flutter_map_markers.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/model/animated_sprite_marker.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/animation_mode.dart';
 import 'package:flutter_map_markers_example/app_drawer.dart';
 import 'package:flutter_map_markers_example/demo_pages/diamond_marker_anim.dart';
@@ -24,7 +23,7 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
   late final AnimationController _animationController;
   SpriteAtlas? _spriteAtlas;
   SpriteMarkerManager? _markerManager;
-  List<AnimatedSpriteMarker> markers = [];
+  List<SpriteMarkerSequence> markers = [];
   int markerCount = 1000;
   int lastTime = 0;
   @override
@@ -80,7 +79,7 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
     //random rotation and scale for each marker
 
     setState(() {
-      markers = List<AnimatedSpriteMarker>.generate(count, (index) {
+      markers = List<SpriteMarkerSequence>.generate(count, (index) {
         //rotation in radians
 
         final position = Utility.clusterPoint(
@@ -88,7 +87,7 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
           random,
           maxDistance: 10.0,
         );
-        return AnimatedSpriteMarker(
+        return SpriteMarkerSequence(
           id: 'marker_$index',
           scale: 1.0,
           rotate: true,
@@ -103,7 +102,7 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
           animating: true,
           animationCycles: [
             [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-            [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+            [10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
           ],
         );
       });
@@ -134,7 +133,7 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
                       urlTemplate:
                           'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                     ),
-                    SpriteMarkerManagerLayer(markerManager: _markerManager!),
+                    SpriteMarkerLayerRaw(markerManager: _markerManager!),
                   ],
                 ),
                 Positioned(

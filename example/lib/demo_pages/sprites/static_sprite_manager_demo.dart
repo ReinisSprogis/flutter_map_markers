@@ -1,14 +1,9 @@
-
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/flutter_map_markers.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/manager/sprite_marker_manager_layer.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_marker_manager.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/sprite_util.dart';
 import 'package:flutter_map_markers_example/app_drawer.dart';
 import 'package:flutter_map_markers_example/demo_pages/diamond_marker_anim.dart';
 import 'package:flutter_map_markers_example/utility/utility.dart';
@@ -18,14 +13,14 @@ class StaticSpriteManagerDemo extends StatefulWidget {
   const StaticSpriteManagerDemo({super.key});
 
   @override
-  State<StaticSpriteManagerDemo> createState() => _StaticSpriteManagerDemoState();
+  State<StaticSpriteManagerDemo> createState() =>
+      _StaticSpriteManagerDemoState();
 }
 
 class _StaticSpriteManagerDemoState extends State<StaticSpriteManagerDemo> {
- 
   SpriteAtlas? _spriteAtlas;
   SpriteMarkerManager? _markerManager;
-  List<StaticSpriteMarker> markers = [];
+  List<SpriteMarkerFrame> markers = [];
   int markerCount = 1000;
   int lastTime = 0;
   @override
@@ -42,11 +37,10 @@ class _StaticSpriteManagerDemoState extends State<StaticSpriteManagerDemo> {
     );
     final spriteAtlas = SpriteAtlas.custom(
       image: image,
-      sprites: DiamondMarkerAnim.sprites
+      sprites: DiamondMarkerAnim.sprites,
     );
     return spriteAtlas;
   }
-
 
   Future<void> _loadAtlas() async {
     _spriteAtlas = await _getAtlas();
@@ -60,7 +54,7 @@ class _StaticSpriteManagerDemoState extends State<StaticSpriteManagerDemo> {
     //random rotation and scale for each marker
 
     setState(() {
-      markers = List<StaticSpriteMarker>.generate(count, (index) {
+      markers = List<SpriteMarkerFrame>.generate(count, (index) {
         //rotation in radians
 
         final position = Utility.clusterPoint(
@@ -68,7 +62,7 @@ class _StaticSpriteManagerDemoState extends State<StaticSpriteManagerDemo> {
           random,
           maxDistance: 10.0,
         );
-        return StaticSpriteMarker(
+        return SpriteMarkerFrame(
           id: 'marker_$index',
           scale: 1.0,
           rotate: true,
@@ -104,7 +98,7 @@ class _StaticSpriteManagerDemoState extends State<StaticSpriteManagerDemo> {
                       urlTemplate:
                           'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                     ),
-                    SpriteMarkerManagerLayer(markerManager: _markerManager!),
+                    SpriteMarkerLayerRaw(markerManager: _markerManager!),
                   ],
                 ),
                 Positioned(

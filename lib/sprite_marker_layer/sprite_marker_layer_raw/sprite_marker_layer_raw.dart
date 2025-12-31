@@ -1,11 +1,11 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_marker_manager.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/manager/sprite_marker_layer_leaf.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/sprite_marker_layer_raw/sprite_marker_layer_raw_leaf.dart';
 
-class SpriteMarkerManagerLayer extends StatelessWidget {
+class SpriteMarkerLayerRaw extends StatelessWidget {
   final SpriteMarkerManager markerManager;
-  const SpriteMarkerManagerLayer({super.key, required this.markerManager});
+  const SpriteMarkerLayerRaw({super.key, required this.markerManager});
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +16,7 @@ class SpriteMarkerManagerLayer extends StatelessWidget {
     markerManager.updateCamera(camera);
 
     return MobileLayerTransformer(
-      child: SpriteMarkerLayerLeaf(markerManager: markerManager),
+      child: SpriteMarkerLayerRawLeaf(markerManager: markerManager),
     );
   }
 }

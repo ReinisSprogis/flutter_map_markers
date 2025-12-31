@@ -1,11 +1,11 @@
 import 'package:flutter/rendering.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_marker_manager.dart';
 
-class SpriteMarkerRenderBox extends RenderBox {
+class SpriteMarkerLayerRawRenderBox extends RenderBox {
   SpriteMarkerManager _markerManager;
   bool _isListening = false;
 
-  SpriteMarkerRenderBox({required SpriteMarkerManager markerManager})
+  SpriteMarkerLayerRawRenderBox({required SpriteMarkerManager markerManager})
     : _markerManager = markerManager {
     _startListening();
   }

@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/flutter_map_markers.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/model/animated_sprite_marker.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/animation_mode.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_marker_manager.dart';
@@ -26,7 +25,7 @@ class _SimpleSpriteMarkerDemoPageState extends State<SimpleSpriteMarkerDemoPage>
     with SingleTickerProviderStateMixin {
   late final AnimationController _animationController;
   SpriteMarkerManager? _markerManager;
-  List<AnimatedSpriteMarker> _markers = [];
+  List<SpriteMarkerSequence> _markers = [];
   int markerCount = 1000;
   int lastTime = 0;
   @override
@@ -51,7 +50,7 @@ class _SimpleSpriteMarkerDemoPageState extends State<SimpleSpriteMarkerDemoPage>
             updateSpriteFrames();
 
             // Single-pass buffered update: transforms + animation.
-            _markerManager?.tick(deltaTime , markersMoved: true);
+            _markerManager?.tick(deltaTime, markersMoved: true);
           })
           ..repeat();
   }
@@ -84,7 +83,7 @@ class _SimpleSpriteMarkerDemoPageState extends State<SimpleSpriteMarkerDemoPage>
     double scale = 0.5 + random.nextDouble() * 0.3;
     //double speed = minSpeed + random.nextDouble() * (maxSpeed - minSpeed);
     int markersCount = _markers.length;
-    final marker = AnimatedSpriteMarker(
+    final marker = SpriteMarkerSequence(
       id: 'marker_${markersCount}',
       rotate: false,
       scale: scale,
@@ -94,7 +93,7 @@ class _SimpleSpriteMarkerDemoPageState extends State<SimpleSpriteMarkerDemoPage>
       cycleIndex: markersCount % 2,
       animationCycles: const [
         [6, 7],
-        [0, 1, 2, 3, 4, 5]
+        [0, 1, 2, 3, 4, 5],
       ],
     );
 
@@ -162,26 +161,26 @@ class _SimpleSpriteMarkerDemoPageState extends State<SimpleSpriteMarkerDemoPage>
     //random rotation and scale for each marker
 
     setState(() {
-      _markers = List<AnimatedSpriteMarker>.generate(count, (index) {
+      _markers = List<SpriteMarkerSequence>.generate(count, (index) {
         //rotation in radians
         double rotation = random.nextDouble() * 2 * pi;
-        double scale = 0.50;// + random.nextDouble() * 0.3;
+        double scale = 0.50; // + random.nextDouble() * 0.3;
 
         final position = Utility.clusterPoint(
           london,
           random,
           maxDistance: 10.0,
         );
-        return AnimatedSpriteMarker(
+        return SpriteMarkerSequence(
           cycleIndex: index % 2,
           id: 'marker_$index',
           scale: scale,
           rotate: false,
           fps: 60,
-         
+
           animationCycles: [
             [6, 7],
-            [0, 1, 2, 3, 4, 5]
+            [0, 1, 2, 3, 4, 5],
           ],
           // rotation: rotation,
           position: position,
@@ -219,7 +218,7 @@ class _SimpleSpriteMarkerDemoPageState extends State<SimpleSpriteMarkerDemoPage>
                       urlTemplate:
                           'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                     ),
-                    SpriteMarkerManagerLayer(markerManager: _markerManager!),
+                    SpriteMarkerLayerRaw(markerManager: _markerManager!),
                   ],
                 ),
                 Positioned(

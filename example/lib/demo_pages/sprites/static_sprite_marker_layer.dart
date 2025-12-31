@@ -5,24 +5,22 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/flutter_map_markers.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/sprite_util.dart';
 import 'package:flutter_map_markers_example/app_drawer.dart';
 import 'package:flutter_map_markers_example/demo_pages/diamond_marker_anim.dart';
 import 'package:flutter_map_markers_example/utility/utility.dart';
 import 'package:latlong2/latlong.dart';
 
-class StaticSpriteMarkerLayerDemo extends StatefulWidget {
-  const StaticSpriteMarkerLayerDemo({super.key});
+class SpriteMarkerFrameLayerDemo extends StatefulWidget {
+  const SpriteMarkerFrameLayerDemo({super.key});
 
   @override
-  State<StaticSpriteMarkerLayerDemo> createState() => _StaticSpriteMarkerLayerDemoState();
+  State<SpriteMarkerFrameLayerDemo> createState() => _SpriteMarkerFrameLayerDemoState();
 }
 
-class _StaticSpriteMarkerLayerDemoState extends State<StaticSpriteMarkerLayerDemo> {
+class _SpriteMarkerFrameLayerDemoState extends State<SpriteMarkerFrameLayerDemo> {
  
   SpriteAtlas? _spriteAtlas;
-  List<StaticSpriteMarker> markers = [];
+  List<SpriteMarkerFrame> markers = [];
   List<CircleMarker> circles = [];
   int markerCount = 1000;
   int lastTime = 0;
@@ -57,7 +55,7 @@ class _StaticSpriteMarkerLayerDemoState extends State<StaticSpriteMarkerLayerDem
     //random rotation and scale for each marker
       circles = [];
     setState(() {
-      markers = List<StaticSpriteMarker>.generate(count, (index) {
+      markers = List<SpriteMarkerFrame>.generate(count, (index) {
         //rotation in radians
 
         final position = Utility.clusterPoint(
@@ -74,7 +72,7 @@ class _StaticSpriteMarkerLayerDemoState extends State<StaticSpriteMarkerLayerDem
             radius: 48,
           ),
         );
-        return StaticSpriteMarker(
+        return SpriteMarkerFrame(
           id: 'marker_$index',
           scale: 1.0,
           rotate: true,

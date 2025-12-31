@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/animation_mode.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_marker.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/model/markers/sprite_marker.dart';
 
-class AnimatedSpriteMarker extends SpriteMarker {
+class SpriteMarkerSequence extends SpriteMarker {
   int cycleIndex;
   List<List<int>> animationCycles;
   int fps;
@@ -19,7 +19,7 @@ class AnimatedSpriteMarker extends SpriteMarker {
   /// Whether this marker should advance frames over time.
   bool animating;
 
-  AnimatedSpriteMarker({
+  SpriteMarkerSequence({
     required super.id,
     required super.position,
     this.cycleIndex = 0,
