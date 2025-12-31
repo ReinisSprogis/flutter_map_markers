@@ -7,6 +7,7 @@ import 'package:flutter_map_markers/flutter_map_markers.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/animated_sprite_marker.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/animation_mode.dart';
 import 'package:flutter_map_markers_example/app_drawer.dart';
+import 'package:flutter_map_markers_example/demo_pages/diamond_marker_anim.dart';
 import 'package:flutter_map_markers_example/utility/utility.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -30,21 +31,20 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
     super.initState();
     _animationController =
         AnimationController(
-            vsync: this,
-            // 60 alternations per second = 30 complete cycles per second
-            // 2 frames, each visible for 1/60 second = 16.67ms
-            // Full cycle = 33.33ms
-            duration: const Duration(milliseconds: 33),
-          )
-          ..addListener(() {
-            final int nowMs =
-                _animationController.lastElapsedDuration?.inMilliseconds ?? 0;
-            final int deltaTime = nowMs - lastTime;
-            lastTime = nowMs;
-            setState(() {
-              _markerManager?.tick(deltaTime);
-            });
+          vsync: this,
+          // 60 alternations per second = 30 complete cycles per second
+          // 2 frames, each visible for 1/60 second = 16.67ms
+          // Full cycle = 33.33ms
+          duration: const Duration(milliseconds: 33),
+        )..addListener(() {
+          final int nowMs =
+              _animationController.lastElapsedDuration?.inMilliseconds ?? 0;
+          final int deltaTime = nowMs - lastTime;
+          lastTime = nowMs;
+          setState(() {
+            _markerManager?.tick(deltaTime);
           });
+        });
 
     Future.microtask(() async {
       await _loadAtlas();
@@ -53,13 +53,11 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
 
   Future<SpriteAtlas> _getAtlas() async {
     final image = await SpriteUtil.loadAtlasImageFromAssets(
-      'assets/markers_48x10_anim_colored.png',
+      'assets/diamond_marker_anim.png',
     );
-    final spriteAtlas = SpriteAtlas.horizontal(
+    final spriteAtlas = SpriteAtlas.custom(
       image: image,
-      spriteCount: 10,
-      spriteWidth: 48,
-      spriteHeight: 48,
+      sprites: DiamondMarkerAnim.sprites,
     );
     return spriteAtlas;
   }
@@ -83,7 +81,7 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
     setState(() {
       markers = List<AnimatedSpriteMarker>.generate(count, (index) {
         //rotation in radians
-        double scale = 0.5 + random.nextDouble() * 0.3;
+        
 
         final position = Utility.clusterPoint(
           london,
@@ -92,12 +90,14 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
         );
         return AnimatedSpriteMarker(
           id: 'marker_$index',
-          scale: scale,
+          scale: 1.0,
           rotate: true,
-          fps: 6,
+          fps: 10,
           // rotation: rotation,
-          mode: AnimationMode.once,
+          mode: AnimationMode.loop,
+          anchor: Alignment.bottomCenter,
           position: position,
+          cycleIndex: 0,
           animationCycles: [
             [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
           ],
