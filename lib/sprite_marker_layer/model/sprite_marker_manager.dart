@@ -631,6 +631,7 @@ class SpriteMarkerManager extends ChangeNotifier {
         a.center == b.center;
   }
 
+  final Random _random = Random();
   int _resolveSpriteIndexAtTime(SpriteMarker marker) {
     if (marker is StaticSpriteMarker) {
       return marker.spriteIndex;
@@ -684,7 +685,7 @@ class SpriteMarkerManager extends ChangeNotifier {
         return frames[cycle.isEven ? idx : frameCount - 1 - idx];
 
       case AnimationMode.random:
-        return frames[raw % frameCount];
+        return frames[_random.nextInt(frameCount)];
     }
   }
 
