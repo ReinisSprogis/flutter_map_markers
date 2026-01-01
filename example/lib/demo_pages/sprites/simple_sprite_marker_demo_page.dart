@@ -184,7 +184,7 @@ class _SimpleSpriteMarkerDemoPageState extends State<SimpleSpriteMarkerDemoPage>
           ],
           // rotation: rotation,
           position: position,
-          mode: AnimationMode.loop,
+          mode: AnimationMode.loopForward,
           anchor: Alignment.center,
         );
       });
