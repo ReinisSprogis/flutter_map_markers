@@ -844,17 +844,20 @@ class SpriteMarkerManager extends ChangeNotifier {
     final int step = raw + startFrameIndex;
 
     switch (m.mode) {
-      case AnimationMode.loop:
+      case AnimationMode.loopForward:
         return frames[step % frameCount];
 
-      case AnimationMode.once:
+      case AnimationMode.loopBackward:
+        return frames[(frameCount - (step % frameCount)) % frameCount];
+        
+      case AnimationMode.forwardOnce:
         if (step >= frameCount) {
           state.finished = true;
           return frames.last;
         }
         return frames[step];
 
-      case AnimationMode.reverse:
+      case AnimationMode.reverseOnce:
         return frames[frameCount - 1 - (step % frameCount)];
 
       case AnimationMode.pingPong:

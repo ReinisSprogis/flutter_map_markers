@@ -32,16 +32,10 @@ class SpriteMarkerSequence extends SpriteMarker {
     super.onTap,
     super.anchor = Alignment.center,
     this.fps = 10,
-    this.mode = AnimationMode.loop,
+    this.mode = AnimationMode.loopForward,
     this.cycleFrameIndex = 0,
     this.animating = true,
   });
-
-  @Deprecated('Use animating instead.')
-  bool get playing => animating;
-
-  @Deprecated('Use animating instead.')
-  set playing(bool value) => animating = value;
 
   /// Start animating. Optionally set a starting frame within the cycle.
   void animate({int? fromFrameIndex}) {
