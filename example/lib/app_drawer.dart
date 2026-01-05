@@ -173,7 +173,7 @@ class AppDrawer extends StatelessWidget {
               );
             },
           ),
-           ListTile(
+          ListTile(
             leading: const Icon(Icons.circle),
             title: const Text('Static Sprite Manager Demo'),
             onTap: () {
@@ -185,7 +185,7 @@ class AppDrawer extends StatelessWidget {
               );
             },
           ),
-           ListTile(
+          ListTile(
             leading: const Icon(Icons.circle),
             title: const Text('Static Sprite Marker Layer'),
             onTap: () {

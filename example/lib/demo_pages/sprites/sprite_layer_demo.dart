@@ -6,8 +6,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/flutter_map_markers.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/animation_mode.dart';
 import 'package:flutter_map_markers_example/app_drawer.dart';
-import 'package:flutter_map_markers_example/demo_pages/diamond_marker_anim.dart';
-import 'package:flutter_map_markers_example/demo_pages/sprites/gem_red_and_white.dart';
+import 'package:flutter_map_markers_example/demo_pages/sprites/gemstone.dart';
 import 'package:flutter_map_markers_example/utility/utility.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -32,9 +31,6 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
     _animationController =
         AnimationController(
           vsync: this,
-          // 60 alternations per second = 30 complete cycles per second
-          // 2 frames, each visible for 1/60 second = 16.67ms
-          // Full cycle = 33.33ms
           duration: const Duration(milliseconds: 33),
         )..addListener(() {
           final int nowMs =
@@ -42,7 +38,7 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
           final int deltaTime = nowMs - lastTime;
           lastTime = nowMs;
 
-          _markerManager?.tick(deltaTime, markersMoved: true);
+          _markerManager?.tick(deltaTime);
         });
 
     Future.microtask(() async {
@@ -52,11 +48,11 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
 
   Future<SpriteAtlas> _getAtlas() async {
     final image = await SpriteUtil.loadAtlasImageFromAssets(
-      'assets/gem_red_and_white.png',
+      'assets/gemstone.png',
     );
     final spriteAtlas = SpriteAtlas.custom(
       image: image,
-      sprites: GemRedAndWhite.sprites,
+      sprites: Gemstone.sprites,
     );
     return spriteAtlas;
   }
@@ -91,18 +87,17 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
           id: 'marker_$index',
           scale: 1.0,
           rotate: true,
-          fps: 10,
+          fps: 1,
           // rotation: rotation,
-          mode: AnimationMode.loop,
+          mode: AnimationMode.loopForward,
           anchor: Alignment.bottomCenter,
           position: position,
-          cycleIndex: index % 2,
+          cycleIndex: 0,
           // Example: pin the first marker to a specific frame.
-          cycleFrameIndex: random.nextInt(10),
+          cycleFrameIndex: 0,
           animating: true,
           animationCycles: [
-            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-            [10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10, 11, 12, 13, 14, 15, 16, 17, 18, 19,20,21,22,23,24],
           ],
         );
       });
