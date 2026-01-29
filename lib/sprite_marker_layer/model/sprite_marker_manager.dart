@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -12,8 +13,11 @@ import 'package:flutter_map_markers/sprite_marker_layer/model/animation_mode.dar
 import 'package:flutter_map_markers/sprite_marker_layer/model/markers/sprite_marker_frame.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/markers/sprite_marker.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/model/sequence.dart';
 
 import 'package:latlong2/latlong.dart' as coord;
+
+
 
 class SpriteMarkerManager extends ChangeNotifier {
   MapCamera? camera;
@@ -805,73 +809,108 @@ class SpriteMarkerManager extends ChangeNotifier {
   }
 
   int _resolveSpriteIndexAtTime(SpriteMarker marker) {
-    if (marker is SpriteMarkerFrame) {
-      return marker.spriteIndex;
-    }
-
-    if (marker is! SpriteMarkerSequence) {
-      return marker.spriteIndex;
-    }
-
-    final SpriteMarkerSequence m = marker;
-
-    final List<List<int>> cycles = m.animationCycles;
-    if (cycles.isEmpty) return 0;
-    final int safeCycleIndex =
-        (m.cycleIndex >= 0 && m.cycleIndex < cycles.length) ? m.cycleIndex : 0;
-    final frames = cycles[safeCycleIndex];
-    if (frames.isEmpty) return 0;
-
-    final int frameCount = frames.length;
-    final int startFrameIndex =
-        (m.cycleFrameIndex >= 0 && m.cycleFrameIndex < frameCount)
-        ? m.cycleFrameIndex
-        : 0;
-
-    if (!m.animating) {
-      return frames[startFrameIndex];
-    }
-
-    final state = _animStates[m.id];
-    if (state == null) return frames[startFrameIndex];
-
-    final double t = state._effectiveTime(
-      nowSeconds: _clockSeconds,
-      playing: m.animating,
-    );
-
-    final int raw = (t * m.fps).floor();
-    final int step = raw + startFrameIndex;
-
-    switch (m.mode) {
-      case AnimationMode.loopForward:
-        return frames[step % frameCount];
-
-      case AnimationMode.loopBackward:
-        return frames[(frameCount - (step % frameCount)) % frameCount];
-        
-      case AnimationMode.forwardOnce:
-        if (step >= frameCount) {
-          state.finished = true;
-          return frames.last;
-        }
-        return frames[step];
-
-      case AnimationMode.reverseOnce:
-        return frames[frameCount - 1 - (step % frameCount)];
-
-      case AnimationMode.pingPong:
-        final cycle = step ~/ frameCount;
-        final idx = step % frameCount;
-        return frames[cycle.isEven ? idx : frameCount - 1 - idx];
-
-      case AnimationMode.random:
-        // Stable per marker+frame-step to avoid visible flicker.
-        final int seed = Object.hash(m.id, step);
-        final int idx = seed.abs() % frameCount;
-        return frames[idx];
-    }
+  // Static frame markers
+  if (marker is SpriteMarkerFrame) {
+    return marker.spriteIndex;
   }
+
+  // Non-animated markers fallback
+  if (marker is! SpriteMarkerSequence) {
+    return marker.spriteIndex;
+  }
+
+  final SpriteMarkerSequence m = marker;
+
+  // Safety
+  if (m.sequences.isEmpty) return 0;
+
+  final int safeSeqIndex =
+      (m.sequenceIndex >= 0 && m.sequenceIndex < m.sequences.length)
+          ? m.sequenceIndex
+          : 0;
+
+  final Sequence seq = m.sequences[safeSeqIndex];
+  final List<int> frames = seq.frames;
+
+  if (frames.isEmpty) return 0;
+
+  final int frameCount = frames.length;
+
+  final int startFrame =
+      (seq.startFrame >= 0 && seq.startFrame < frameCount)
+          ? seq.startFrame
+          : 0;
+
+  // Hold current frame when not animating
+  if (!m.animating) {
+    final int idx = m.frameIndex.clamp(0, frameCount - 1);
+    return frames[idx];
+  }
+
+  final state = _animStates[m.id];
+  if (state == null) {
+    return frames[startFrame];
+  }
+
+  final double t = state._effectiveTime(
+    nowSeconds: _clockSeconds,
+    playing: m.animating,
+  );
+
+  final int rawStep = (t * seq.fps).floor();
+  final int step = rawStep + startFrame;
+
+  int resolvedFrameIndex = 0;
+
+  switch (seq.mode) {
+    case AnimationMode.loopForward:
+      resolvedFrameIndex = step % frameCount;
+      break;
+
+    case AnimationMode.loopBackward:
+      resolvedFrameIndex =
+          (frameCount - 1 - (step % frameCount));
+      break;
+
+    case AnimationMode.forwardOnce:
+      if (step >= frameCount) {
+        state.finished = true;
+        resolvedFrameIndex = frameCount - 1;
+      } else {
+        resolvedFrameIndex = step;
+      }
+      break;
+
+    case AnimationMode.reverseOnce:
+      final int idx = frameCount - 1 - step;
+      if (idx <= 0) {
+        state.finished = true;
+        resolvedFrameIndex = 0;
+      } else {
+        resolvedFrameIndex = idx;
+      }
+      break;
+
+    case AnimationMode.pingPong:
+      final int cycle = step ~/ frameCount;
+      final int idx = step % frameCount;
+      resolvedFrameIndex =
+          cycle.isEven ? idx : frameCount - 1 - idx;
+      break;
+
+    case AnimationMode.random:
+      final int seed = Object.hash(m.id, step);
+      resolvedFrameIndex = seed.abs() % frameCount;
+      break;
+  }
+
+  // Persist resolved frame (important for editor + preview)
+  m.frameIndex = resolvedFrameIndex;
+
+  return frames[resolvedFrameIndex];
+}
+
+
 
   void _ensureCapacity(int required) {
     if (required <= _capacity) return;

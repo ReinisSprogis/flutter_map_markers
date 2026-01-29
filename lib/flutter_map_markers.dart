@@ -9,3 +9,5 @@ export 'sprite_marker_layer/model/markers/sprite_marker_sequence.dart';
 export 'sprite_marker_layer/model/sprite_marker_manager.dart';
 export 'sprite_marker_layer/sprite_marker_layer_raw/sprite_marker_layer_raw.dart';
 export 'sprite_marker_layer/sprite_util.dart';
+export 'sprite_marker_layer/model/animation_mode.dart';
+export 'sprite_marker_layer/model/sequence.dart';

@@ -181,8 +181,12 @@ class RenderSpriteMarkerLayer extends RenderBox {
           // So a 48px-wide sprite will represent 48 meters when marker.scale==1.
           ? (marker.scale * _metersToPixels(marker.position, 2))
           : marker.scale;
-         
+
       if (scale <= 0) continue;
+
+      // Convert Alignment (-1.0 to 1.0) to anchor point (0.0 to 1.0)
+      final double anchorX = spriteInfo.width * (marker.anchor.x + 1.0) / 2.0;
+      final double anchorY = spriteInfo.height * (marker.anchor.y + 1.0) / 2.0;
 
       final double dx = screenOffset.dx + offset.dx;
       final double dy = screenOffset.dy + offset.dy;
@@ -192,8 +196,8 @@ class RenderSpriteMarkerLayer extends RenderBox {
       final RSTransform transform = RSTransform.fromComponents(
         rotation: totalRotation,
         scale: scale,
-        anchorX: spriteInfo.width * 0.5,
-        anchorY: spriteInfo.height * 0.5,
+        anchorX: anchorX,
+        anchorY: anchorY,
         translateX: dx,
         translateY: dy,
       );
@@ -310,9 +314,20 @@ class RenderSpriteMarkerLayer extends RenderBox {
         marker.spriteIndex,
       );
 
-      // Simple rectangular hit testing
-      final double halfWidth = (spriteInfo.width * marker.scale) / 2;
-      final double halfHeight = (spriteInfo.height * marker.scale) / 2;
+      final double scale = _spriteSizeInMeters
+          ? (marker.scale * _metersToPixels(marker.position, 2))
+          : marker.scale;
+
+      if (!scale.isFinite || scale <= 0) continue;
+
+      // Convert Alignment (-1.0 to 1.0) to anchor point (0.0 to 1.0)
+      final double anchorX = spriteInfo.width * (marker.anchor.x + 1.0) / 2.0;
+      final double anchorY = spriteInfo.height * (marker.anchor.y + 1.0) / 2.0;
+
+      // Simple rectangular hit testing (axis-aligned, ignores rotation).
+      // Position refers to the anchor point.
+      final double width = spriteInfo.width * scale;
+      final double height = spriteInfo.height * scale;
 
       // If marker rotates with map (rotate=false), its hit box rotates with map.
       // If marker stays upright (rotate=true), its hit box stays upright.
@@ -324,10 +339,11 @@ class RenderSpriteMarkerLayer extends RenderBox {
       // This is an approximation but should work for small markers.
       // TODO: Implement precise rotated hit testing.
 
-      Rect hitRect = Rect.fromCenter(
-        center: screenOffset,
-        width: halfWidth * 2,
-        height: halfHeight * 2,
+      final Rect hitRect = Rect.fromLTWH(
+        screenOffset.dx - (anchorX * scale),
+        screenOffset.dy - (anchorY * scale),
+        width,
+        height,
       );
 
       if (hitRect.contains(localPosition)) {

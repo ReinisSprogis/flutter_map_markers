@@ -87,17 +87,42 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
           id: 'marker_$index',
           scale: 1.0,
           rotate: true,
-          fps: 1,
           // rotation: rotation,
-          mode: AnimationMode.loopForward,
           anchor: Alignment.bottomCenter,
           position: position,
-          cycleIndex: 0,
+          sequenceIndex: 0,
           // Example: pin the first marker to a specific frame.
-          cycleFrameIndex: 0,
+          frameIndex: 0,
           animating: true,
-          animationCycles: [
-            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10, 11, 12, 13, 14, 15, 16, 17, 18, 19,20,21,22,23,24],
+          sequences: [Sequence(frames: [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18,
+              19,
+              20,
+              21,
+              22,
+              23,
+              24,
+            
+          ])
+            
           ],
         );
       });

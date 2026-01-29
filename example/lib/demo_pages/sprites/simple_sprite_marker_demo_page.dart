@@ -8,7 +8,6 @@ import 'package:flutter_map_markers/sprite_marker_layer/model/animation_mode.dar
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_marker_manager.dart';
 import 'package:flutter_map_markers_example/app_drawer.dart';
-import 'package:flutter_map_markers_example/demo_pages/heli_2.dart';
 import 'package:flutter_map_markers_example/demo_pages/heli_fire.dart';
 import 'package:flutter_map_markers_example/utility/utility.dart';
 import 'package:latlong2/latlong.dart';
@@ -89,11 +88,10 @@ class _SimpleSpriteMarkerDemoPageState extends State<SimpleSpriteMarkerDemoPage>
       scale: scale,
       rotation: rotation,
       position: position,
-      fps: 60,
-      cycleIndex: markersCount % 2,
-      animationCycles: const [
-        [6, 7],
-        [0, 1, 2, 3, 4, 5],
+      sequenceIndex: markersCount % 2,
+      sequences: const [
+        Sequence(frames: [6, 7]),
+        Sequence(frames: [0, 1, 2, 3, 4, 5]),
       ],
     );
 
@@ -172,19 +170,17 @@ class _SimpleSpriteMarkerDemoPageState extends State<SimpleSpriteMarkerDemoPage>
           maxDistance: 10.0,
         );
         return SpriteMarkerSequence(
-          cycleIndex: index % 2,
+          sequenceIndex: index % 2,
           id: 'marker_$index',
           scale: scale,
           rotate: false,
-          fps: 60,
 
-          animationCycles: [
-            [6, 7],
-            [0, 1, 2, 3, 4, 5],
+          sequences: [
+            Sequence(frames: [6, 7],fps: 20),
+            Sequence(frames: [0, 1, 2, 3, 4, 5],fps: 60),
           ],
           // rotation: rotation,
           position: position,
-          mode: AnimationMode.loopForward,
           anchor: Alignment.center,
         );
       });

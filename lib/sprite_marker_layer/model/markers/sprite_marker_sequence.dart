@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/model/animation_mode.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/markers/sprite_marker.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/model/sequence.dart';
 
 class SpriteMarkerSequence extends SpriteMarker {
-  int cycleIndex;
-  List<List<int>> animationCycles;
-  int fps;
-  AnimationMode mode;
+  int sequenceIndex;
+  List<Sequence> sequences;
 
   /// Index of the current frame within the selected animation cycle.
   ///
@@ -14,7 +12,7 @@ class SpriteMarkerSequence extends SpriteMarker {
   /// For example, for cycle `[6,7,8,9]`:
   /// - `cycleFrameIndex = 0` -> `spriteIndex = 6`
   /// - `cycleFrameIndex = 3` -> `spriteIndex = 9`
-  int cycleFrameIndex;
+  int frameIndex;
 
   /// Whether this marker should advance frames over time.
   bool animating;
@@ -22,8 +20,8 @@ class SpriteMarkerSequence extends SpriteMarker {
   SpriteMarkerSequence({
     required super.id,
     required super.position,
-    this.cycleIndex = 0,
-    required this.animationCycles,
+    this.sequenceIndex = 0,
+    required this.sequences,
     super.scale = 1.0,
     super.rotation = 0.0,
     super.rotate = false,
@@ -31,16 +29,14 @@ class SpriteMarkerSequence extends SpriteMarker {
     super.color = Colors.transparent,
     super.onTap,
     super.anchor = Alignment.center,
-    this.fps = 10,
-    this.mode = AnimationMode.loopForward,
-    this.cycleFrameIndex = 0,
+    this.frameIndex = 0,
     this.animating = true,
   });
 
   /// Start animating. Optionally set a starting frame within the cycle.
   void animate({int? fromFrameIndex}) {
     if (fromFrameIndex != null) {
-      cycleFrameIndex = fromFrameIndex;
+      frameIndex = fromFrameIndex;
     }
     animating = true;
   }
@@ -54,10 +50,10 @@ class SpriteMarkerSequence extends SpriteMarker {
   ///
   /// If [animate] is true, also starts animating.
   void resetAnimation({bool animate = false}) {
-    cycleFrameIndex = 0;
+    frameIndex = 0;
     animating = animate;
   }
 
   @override
-  int get spriteIndex => animationCycles[cycleIndex][cycleFrameIndex];
+  int get spriteIndex => sequences[sequenceIndex].frames[frameIndex];
 }
