@@ -45,7 +45,7 @@ class RenderSpriteMarkerLayer extends RenderBox {
        _spriteSizeInMeters = spriteSizeInMeters,
        _animationPlayer = animationPlayer {
     _startListening();
-       }
+  }
 
   /// Recognizes taps for markers.
   late final TapGestureRecognizer _tapGestureRecognizer =
@@ -70,7 +70,7 @@ class RenderSpriteMarkerLayer extends RenderBox {
     markNeedsPaint();
   }
 
-bool _isListening = false;
+  bool _isListening = false;
   void _startListening() {
     if (_isListening) return;
     _animationPlayer?.addListener(_onAnimationUpdate);
@@ -144,15 +144,15 @@ bool _isListening = false;
     }
 
     final Canvas canvas = context.canvas;
-    final List<SpriteMarker> visibleMarkers = _cullMarkers
-        ? _getVisibleMarkers()
-        : _markers;
+    // final List<SpriteMarker> visibleMarkers = _cullMarkers
+    //     ? _getVisibleMarkers()
+    //     : _markers;
 
-    if (visibleMarkers.isEmpty) {
-      return;
-    }
+    // if (visibleMarkers.isEmpty) {
+    //   return;
+    // }
 
-    _drawSpritesUsingAtlas(canvas, visibleMarkers, offset);
+    _drawSpritesUsingAtlas(canvas, markers, offset);
   }
 
   /// Gets markers that are visible within the current viewport.
@@ -189,21 +189,27 @@ bool _isListening = false;
 
     for (int i = 0; i < markerCount; i++) {
       final SpriteMarker marker = visibleMarkers[i];
-      if (marker is SpriteMarkerSequence && !marker.isVisible) continue;
+      if (!marker.isVisible) continue;
+      final double rotation = marker.rotation;
+      final bool counterRotate = marker.counterRotate;
+      final double scale0 = marker.scale;
+      final Alignment anchor = marker.anchor;
+      final int spriteIndex = marker.spriteIndex;
 
       // Convert world → screen
       final Offset screenOffset = _camera.getOffsetFromOrigin(marker.position);
 
       if (!screenOffset.dx.isFinite || !screenOffset.dy.isFinite) continue;
-     // print(' index ${marker.spriteIndex}');
+      // print(' index ${marker.spriteIndex}');
       final SpriteInfo spriteInfo = _spriteAtlas.getSpriteInfo(
         marker.spriteIndex,
       );
 
       if (spriteInfo.width <= 0 || spriteInfo.height <= 0) continue;
+     
 
       double totalRotation = marker.rotation;
-      if (marker.rotate) {
+      if (marker.counterRotate) {
         totalRotation -= _camera.rotationRad;
       }
 
@@ -223,7 +229,11 @@ bool _isListening = false;
 
       final double dx = screenOffset.dx + offset.dx;
       final double dy = screenOffset.dy + offset.dy;
-
+       //AABB culling
+      if(dx < 0 || dy < 0) continue;
+      if(dx + spriteInfo.width > _camera.size.width) continue;
+      if(dy + spriteInfo.height > _camera.size.height) continue;
+      
       if (!dx.isFinite || !dy.isFinite) continue;
 
       final RSTransform transform = RSTransform.fromComponents(
@@ -340,7 +350,7 @@ bool _isListening = false;
 
     for (int i = _markers.length - 1; i >= 0; i--) {
       final SpriteMarker marker = _markers[i];
-      if(marker is SpriteMarkerSequence && !marker.isVisible) continue;
+      if (marker is SpriteSequenceMarker && !marker.isVisible) continue;
       final Offset screenOffset = _camera.getOffsetFromOrigin(marker.position);
 
       // Get sprite info for hit testing
