@@ -2,13 +2,17 @@ import 'package:flutter_map_markers/sprite_marker_layer/model/animation_mode.dar
 
 class Sequence {
   final List<int> frames;
-  final int startFrame;
+  int frameIndex;
   final int fps;
   final AnimationMode mode;
-  const Sequence({
+  bool isReversing;
+  void Function()? onAnimationEnd;
+  Sequence({
     required this.frames,
-    this.startFrame = 0,
+    this.frameIndex = 0,
     this.fps = 24,
+    this.isReversing = false,
     this.mode = AnimationMode.loopForward,
+    this.onAnimationEnd,
   });
 }

@@ -19,7 +19,6 @@ class StaticSpriteManagerDemo extends StatefulWidget {
 
 class _StaticSpriteManagerDemoState extends State<StaticSpriteManagerDemo> {
   SpriteAtlas? _spriteAtlas;
-  SpriteMarkerManager? _markerManager;
   List<SpriteMarkerFrame> markers = [];
   int markerCount = 1000;
   int lastTime = 0;
@@ -44,7 +43,6 @@ class _StaticSpriteManagerDemoState extends State<StaticSpriteManagerDemo> {
 
   Future<void> _loadAtlas() async {
     _spriteAtlas = await _getAtlas();
-    _markerManager = SpriteMarkerManager(spriteAtlas: _spriteAtlas!);
     _generateSprites(1);
   }
 
@@ -73,7 +71,6 @@ class _StaticSpriteManagerDemoState extends State<StaticSpriteManagerDemo> {
       });
       markerCount = count;
     });
-    _markerManager?.updateMarkers(markers);
   }
 
   @override
@@ -81,7 +78,7 @@ class _StaticSpriteManagerDemoState extends State<StaticSpriteManagerDemo> {
     return Scaffold(
       appBar: AppBar(title: const Text('Static Sprite Manager Demo')),
       drawer: const AppDrawer(),
-      body: _spriteAtlas == null && _markerManager == null
+      body: _spriteAtlas == null
           ? const Center(child: CircularProgressIndicator())
           : Stack(
               children: [
@@ -98,7 +95,10 @@ class _StaticSpriteManagerDemoState extends State<StaticSpriteManagerDemo> {
                       urlTemplate:
                           'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                     ),
-                    SpriteMarkerLayerRaw(markerManager: _markerManager!),
+                    SpriteMarkerLayer(
+                      spriteAtlas: _spriteAtlas!,
+                      markers: markers,
+                    ),
                   ],
                 ),
                 Positioned(

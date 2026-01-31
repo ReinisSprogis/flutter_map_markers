@@ -15,6 +15,7 @@ dependencies:
   flutter_map_markers:
   latlong2: ^0.9.1
   http: ^1.6.0
+  uuid: ^4.5.2
 
 dependency_overrides: 
   flutter_map_markers:
@@ -49,4 +50,5 @@ flutter:
     - assets/red_circle_48x48.png
     - assets/gem_red_and_white.png
     - assets/gemstone.png
+    - assets/puffy_gems.png
     

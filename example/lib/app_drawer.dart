@@ -9,7 +9,7 @@ import 'package:flutter_map_markers_example/demo_pages/meters_to_pixels_demo_pag
 import 'package:flutter_map_markers_example/demo_pages/pricetag_marker_demo.dart';
 import 'package:flutter_map_markers_example/demo_pages/simple_marker_demo_page.dart';
 import 'package:flutter_map_markers_example/demo_pages/sprites/aircraft_sprite_markers_demo_page.dart';
-import 'package:flutter_map_markers_example/demo_pages/sprites/simple_sprite_marker_demo_page.dart';
+import 'package:flutter_map_markers_example/demo_pages/sprites/animation_player_demo.dart';
 import 'package:flutter_map_markers_example/demo_pages/sprites/sprite_layer_demo.dart';
 import 'package:flutter_map_markers_example/demo_pages/sprites/static_sprite_manager_demo.dart';
 import 'package:flutter_map_markers_example/demo_pages/sprites/static_sprite_marker_layer.dart';
@@ -139,7 +139,7 @@ class AppDrawer extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.circle),
-            title: const Text('Sprite Markers'),
+            title: const Text('Aircraft demo'),
             onTap: () {
               Navigator.pop(context);
               Navigator.of(context).pushReplacement(
@@ -149,18 +149,7 @@ class AppDrawer extends StatelessWidget {
               );
             },
           ),
-          ListTile(
-            leading: const Icon(Icons.circle),
-            title: const Text('Simple Sprite Marker Manager'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (context) => const SimpleSpriteMarkerDemoPage(),
-                ),
-              );
-            },
-          ),
+
           ListTile(
             leading: const Icon(Icons.circle),
             title: const Text('Sprite layer'),
@@ -193,6 +182,18 @@ class AppDrawer extends StatelessWidget {
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
                   builder: (context) => const SpriteMarkerFrameLayerDemo(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.circle),
+            title: const Text('Animation Player'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => const AnimationPlayerDemo(),
                 ),
               );
             },

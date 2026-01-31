@@ -7,8 +7,10 @@ import 'package:flutter_map_markers/flutter_map_markers.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/animation_mode.dart';
 import 'package:flutter_map_markers_example/app_drawer.dart';
 import 'package:flutter_map_markers_example/demo_pages/sprites/gemstone.dart';
+import 'package:flutter_map_markers_example/demo_pages/sprites/puffy_gems.dart';
 import 'package:flutter_map_markers_example/utility/utility.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:uuid/uuid.dart';
 
 class SpriteLayerDemo extends StatefulWidget {
   const SpriteLayerDemo({super.key});
@@ -19,27 +21,15 @@ class SpriteLayerDemo extends StatefulWidget {
 
 class _SpriteLayerDemoState extends State<SpriteLayerDemo>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _animationController;
   SpriteAtlas? _spriteAtlas;
-  SpriteMarkerManager? _markerManager;
+  late final AnimationPlayer _animationPlayer;
   List<SpriteMarkerSequence> markers = [];
   int markerCount = 1000;
   int lastTime = 0;
   @override
   void initState() {
     super.initState();
-    _animationController =
-        AnimationController(
-          vsync: this,
-          duration: const Duration(milliseconds: 33),
-        )..addListener(() {
-          final int nowMs =
-              _animationController.lastElapsedDuration?.inMilliseconds ?? 0;
-          final int deltaTime = nowMs - lastTime;
-          lastTime = nowMs;
-
-          _markerManager?.tick(deltaTime);
-        });
+    _animationPlayer = AnimationPlayer(vsync: this);
 
     Future.microtask(() async {
       await _loadAtlas();
@@ -48,24 +38,24 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
 
   Future<SpriteAtlas> _getAtlas() async {
     final image = await SpriteUtil.loadAtlasImageFromAssets(
-      'assets/gemstone.png',
+      'assets/puffy_gems.png',
     );
     final spriteAtlas = SpriteAtlas.custom(
       image: image,
-      sprites: Gemstone.sprites,
+      sprites: PuffyGems.sprites,
     );
     return spriteAtlas;
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _animationPlayer.dispose();
     super.dispose();
   }
 
   Future<void> _loadAtlas() async {
     _spriteAtlas = await _getAtlas();
-    _markerManager = SpriteMarkerManager(spriteAtlas: _spriteAtlas!);
+    _animationPlayer.markers = markers;
     _generateSprites(1);
   }
 
@@ -83,60 +73,93 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
           random,
           maxDistance: 10.0,
         );
+        final String id = Uuid().v4();
         return SpriteMarkerSequence(
-          id: 'marker_$index',
+          id: id,
           scale: 1.0,
           rotate: true,
-          // rotation: rotation,
           anchor: Alignment.bottomCenter,
           position: position,
-          sequenceIndex: 0,
-          // Example: pin the first marker to a specific frame.
-          frameIndex: 0,
+          sequenceIndex: 1,
           animating: true,
-          sequences: [Sequence(frames: [
-              0,
-              1,
-              2,
-              3,
-              4,
-              5,
-              6,
-              7,
-              8,
-              9,
-              10,
-              11,
-              12,
-              13,
-              14,
-              15,
-              16,
-              17,
-              18,
-              19,
-              20,
-              21,
-              22,
-              23,
-              24,
-            
-          ])
-            
+          onTap: () {
+            final marker = markers[index];
+            if(marker.sequenceIndex != 0){
+               markers[index].sequenceIndex = 0;
+            markers[index].resetAnimation(animate: true);
+            setState(() {});
+            }
+           
+          },
+          sequences: [
+            Sequence(
+              mode: AnimationMode.forwardOnce,
+              fps: 30,
+              frames: [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+              ],
+              onAnimationEnd: () {
+                markers[index].isVisible = false;
+                setState(() {});
+              },
+            ),
+            Sequence(
+              mode: AnimationMode.loopForward,
+              fps: 24,
+              frameIndex: random.nextInt(24),
+              frames: [
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21,
+                22,
+                23,
+                24,
+                25,
+                26,
+                27,
+                28,
+                29,
+                30,
+                31,
+                32,
+                33,
+                34,
+              ],
+            ),
           ],
         );
       });
       markerCount = count;
     });
-    _markerManager?.updateMarkers(markers);
+    _animationPlayer.markers = markers;
+    if (!_animationPlayer.isRunning) {
+      _animationPlayer.start();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Sprite Markers Demo')),
+      appBar: AppBar(title: const Text('Gemstone Demo')),
       drawer: const AppDrawer(),
-      body: _spriteAtlas == null && _markerManager == null
+      body: _spriteAtlas == null
           ? const Center(child: CircularProgressIndicator())
           : Stack(
               children: [
@@ -153,7 +176,11 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
                       urlTemplate:
                           'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                     ),
-                    SpriteMarkerLayerRaw(markerManager: _markerManager!),
+                    SpriteMarkerLayer(
+                      spriteAtlas: _spriteAtlas!,
+                      markers: markers,
+                      animationPlayer: _animationPlayer,
+                    ),
                   ],
                 ),
                 Positioned(
@@ -246,14 +273,14 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          if (_animationController.isAnimating) {
-            _animationController.stop();
+          if (_animationPlayer.isRunning) {
+            _animationPlayer.stop();
           } else {
-            _animationController.repeat();
+            _animationPlayer.start();
           }
         },
         child: Icon(
-          _animationController.isAnimating ? Icons.pause : Icons.play_arrow,
+          _animationPlayer.isRunning ? Icons.pause : Icons.play_arrow,
         ),
       ),
     );

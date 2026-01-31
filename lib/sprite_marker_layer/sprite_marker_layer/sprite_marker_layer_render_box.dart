@@ -1,10 +1,10 @@
 import 'dart:math';
 import 'dart:typed_data';
-import 'dart:ui';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/marker_core.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/markers/sprite_marker.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas.dart';
 import 'package:latlong2/latlong.dart';
@@ -17,6 +17,7 @@ class RenderSpriteMarkerLayer extends RenderBox {
   MapCamera _camera;
   bool _cullMarkers;
   bool _spriteSizeInMeters;
+  AnimationPlayer? _animationPlayer;
 
   /// Active pointers currently down for tap detection.
   final Set<int> _activePointers = <int>{};
@@ -36,11 +37,15 @@ class RenderSpriteMarkerLayer extends RenderBox {
     required MapCamera camera,
     bool cullMarkers = true,
     bool spriteSizeInMeters = false,
+    AnimationPlayer? animationPlayer,
   }) : _spriteAtlas = spriteAtlas,
        _markers = markers,
        _camera = camera,
        _cullMarkers = cullMarkers,
-       _spriteSizeInMeters = spriteSizeInMeters;
+       _spriteSizeInMeters = spriteSizeInMeters,
+       _animationPlayer = animationPlayer {
+    _startListening();
+       }
 
   /// Recognizes taps for markers.
   late final TapGestureRecognizer _tapGestureRecognizer =
@@ -59,6 +64,24 @@ class RenderSpriteMarkerLayer extends RenderBox {
           }
           _clearTapCandidate();
         };
+
+  void _onAnimationUpdate() {
+    // Animations/camera updates mutate internal render buffers; repaint.
+    markNeedsPaint();
+  }
+
+bool _isListening = false;
+  void _startListening() {
+    if (_isListening) return;
+    _animationPlayer?.addListener(_onAnimationUpdate);
+    _isListening = true;
+  }
+
+  void _stopListening() {
+    if (!_isListening) return;
+    _animationPlayer?.removeListener(_onAnimationUpdate);
+    _isListening = false;
+  }
 
   SpriteAtlas get spriteAtlas => _spriteAtlas;
   set spriteAtlas(SpriteAtlas value) {
@@ -96,6 +119,15 @@ class RenderSpriteMarkerLayer extends RenderBox {
   set spriteSizeInMeters(bool value) {
     if (_spriteSizeInMeters != value) {
       _spriteSizeInMeters = value;
+      markNeedsPaint();
+    }
+  }
+
+  AnimationPlayer? get animationPlayer => _animationPlayer;
+  set animationPlayer(AnimationPlayer? value) {
+    if (_animationPlayer != value) {
+      _stopListening();
+      _animationPlayer = value;
       markNeedsPaint();
     }
   }
@@ -157,12 +189,13 @@ class RenderSpriteMarkerLayer extends RenderBox {
 
     for (int i = 0; i < markerCount; i++) {
       final SpriteMarker marker = visibleMarkers[i];
+      if (marker is SpriteMarkerSequence && !marker.isVisible) continue;
 
       // Convert world → screen
       final Offset screenOffset = _camera.getOffsetFromOrigin(marker.position);
 
       if (!screenOffset.dx.isFinite || !screenOffset.dy.isFinite) continue;
-
+     // print(' index ${marker.spriteIndex}');
       final SpriteInfo spriteInfo = _spriteAtlas.getSpriteInfo(
         marker.spriteIndex,
       );
@@ -307,6 +340,7 @@ class RenderSpriteMarkerLayer extends RenderBox {
 
     for (int i = _markers.length - 1; i >= 0; i--) {
       final SpriteMarker marker = _markers[i];
+      if(marker is SpriteMarkerSequence && !marker.isVisible) continue;
       final Offset screenOffset = _camera.getOffsetFromOrigin(marker.position);
 
       // Get sprite info for hit testing

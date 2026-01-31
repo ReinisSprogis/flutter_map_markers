@@ -8,7 +8,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/model/markers/sprite_marker_sequence.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/marker_core.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/animation_mode.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/markers/sprite_marker_frame.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas.dart';
@@ -837,13 +837,13 @@ class SpriteMarkerManager extends ChangeNotifier {
   final int frameCount = frames.length;
 
   final int startFrame =
-      (seq.startFrame >= 0 && seq.startFrame < frameCount)
-          ? seq.startFrame
+      (seq.frameIndex >= 0 && seq.frameIndex < frameCount)
+          ? seq.frameIndex
           : 0;
 
   // Hold current frame when not animating
   if (!m.animating) {
-    final int idx = m.frameIndex.clamp(0, frameCount - 1);
+    final int idx = seq.frameIndex.clamp(0, frameCount - 1);
     return frames[idx];
   }
 
@@ -905,7 +905,7 @@ class SpriteMarkerManager extends ChangeNotifier {
   }
 
   // Persist resolved frame (important for editor + preview)
-  m.frameIndex = resolvedFrameIndex;
+  seq.frameIndex = resolvedFrameIndex;
 
   return frames[resolvedFrameIndex];
 }

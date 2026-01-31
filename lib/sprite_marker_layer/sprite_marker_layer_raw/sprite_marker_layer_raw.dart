@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_marker_manager.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/sprite_marker_layer_raw/sprite_marker_manager.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/sprite_marker_layer_raw/sprite_marker_layer_raw_leaf.dart';
 
 class SpriteMarkerLayerRaw extends StatelessWidget {

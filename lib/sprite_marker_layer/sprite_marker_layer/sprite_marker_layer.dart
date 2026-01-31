@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/marker_core.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/markers/sprite_marker.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/sprite_marker_layer/sprite_marker_layer_leaf.dart';
@@ -26,12 +27,14 @@ class SpriteMarkerLayer extends StatelessWidget {
   /// pixel scale factor (zoom-independent).
   final bool spriteSizeInMeters;
 
+  final AnimationPlayer? animationPlayer;
   const SpriteMarkerLayer({
     super.key,
     required this.spriteAtlas,
     required this.markers,
     this.cullMarkers = true,
     this.spriteSizeInMeters = false,
+    this.animationPlayer,
   });
 
   @override
@@ -44,6 +47,7 @@ class SpriteMarkerLayer extends StatelessWidget {
         camera: camera,
         cullMarkers: cullMarkers,
         spriteSizeInMeters: spriteSizeInMeters,
+        animationPlayer: animationPlayer
       ),
     );
   }

@@ -1,22 +1,16 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/model/markers/sprite_marker.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/model/sequence.dart';
 
+part of '../../marker_core.dart';
 class SpriteMarkerSequence extends SpriteMarker {
   int sequenceIndex;
   List<Sequence> sequences;
 
-  /// Index of the current frame within the selected animation cycle.
-  ///
-  /// This is **not** the atlas sprite index.
-  /// For example, for cycle `[6,7,8,9]`:
-  /// - `cycleFrameIndex = 0` -> `spriteIndex = 6`
-  /// - `cycleFrameIndex = 3` -> `spriteIndex = 9`
-  int frameIndex;
+
 
   /// Whether this marker should advance frames over time.
   bool animating;
+  Duration _accumulated = Duration.zero;
 
+  bool isVisible;
   SpriteMarkerSequence({
     required super.id,
     required super.position,
@@ -29,19 +23,18 @@ class SpriteMarkerSequence extends SpriteMarker {
     super.color = Colors.transparent,
     super.onTap,
     super.anchor = Alignment.center,
-    this.frameIndex = 0,
     this.animating = true,
+    this.isVisible = true
   });
 
-  /// Start animating. Optionally set a starting frame within the cycle.
-  void animate({int? fromFrameIndex}) {
-    if (fromFrameIndex != null) {
-      frameIndex = fromFrameIndex;
-    }
+  void play() {
     animating = true;
   }
 
-  /// Stop animating and keep the current frame.
+  void pause() {
+    animating = false;
+  }
+
   void stop() {
     animating = false;
   }
@@ -50,10 +43,15 @@ class SpriteMarkerSequence extends SpriteMarker {
   ///
   /// If [animate] is true, also starts animating.
   void resetAnimation({bool animate = false}) {
-    frameIndex = 0;
+    sequences[sequenceIndex].frameIndex = 0;
     animating = animate;
   }
 
   @override
-  int get spriteIndex => sequences[sequenceIndex].frames[frameIndex];
+  int get spriteIndex {
+    
+    int frameIndex = sequences[sequenceIndex].frameIndex;
+    final spriteIdx = sequences[sequenceIndex].frames[frameIndex];
+    return spriteIdx;
+  } 
 }
