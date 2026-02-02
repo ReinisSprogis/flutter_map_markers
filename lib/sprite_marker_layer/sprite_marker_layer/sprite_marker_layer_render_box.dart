@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
@@ -8,6 +9,41 @@ import 'package:flutter_map_markers/sprite_marker_layer/marker_core.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/markers/sprite_marker.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas.dart';
 import 'package:latlong2/latlong.dart';
+
+/// Cached projection parameters to avoid expensive per-marker calculations.
+class _ProjectionCache {
+  final Crs crs;
+  final double zoomScale;
+  final double originX;
+  final double originY;
+
+  _ProjectionCache({
+    required this.crs,
+    required this.zoomScale,
+    required this.originX,
+    required this.originY,
+  });
+
+  /// Creates a projection cache from the current camera state.
+  factory _ProjectionCache.fromCamera(MapCamera camera) {
+    final crs = camera.crs;
+    final zoomScale = crs.scale(camera.zoom);
+    final origin = camera.pixelOrigin;
+    return _ProjectionCache(
+      crs: crs,
+      zoomScale: zoomScale,
+      originX: origin.dx,
+      originY: origin.dy,
+    );
+  }
+
+  /// Converts a LatLng to screen offset using cached projection parameters.
+  /// Equivalent to camera.getOffsetFromOrigin() but much faster for batch operations.
+  Offset latLngToOffset(LatLng point) {
+    final (x, y) = crs.latLngToXY(point, zoomScale);
+    return Offset(x - originX, y - originY);
+  }
+}
 
 /// A render object that draws [SpriteMarker]s using sprite atlas rendering
 /// for optimal performance when displaying many markers.
@@ -29,9 +65,18 @@ class RenderSpriteMarkerLayer extends RenderBox {
 
   /// Whether the tap sequence involved multi-touch at any time.
   bool _tapCandidateHadMultiTouch = false;
-   // Preallocate maximum possible size
-   Float32List? rectList; // = Float32List(markerCount * 4);
-   Float32List? transformList; // = Float32List(markerCount * 4);
+
+  // Preallocate maximum possible size
+  Float32List? rectList;
+  Float32List? transformList;
+
+  /// Cached pixel data for transparency hit testing.
+  ByteData? _atlasPixelData;
+  int _atlasPixelWidth = 0;
+  int _atlasPixelHeight = 0;
+
+  /// Threshold for alpha channel to consider a pixel as "hit" (0-255).
+  static const int _alphaHitThreshold = 10;
 
   RenderSpriteMarkerLayer({
     required SpriteAtlas spriteAtlas,
@@ -46,6 +91,17 @@ class RenderSpriteMarkerLayer extends RenderBox {
        _cullMarkers = cullMarkers,
        _animationPlayer = animationPlayer {
     _startListening();
+    _loadAtlasPixelData();
+  }
+
+  /// Loads pixel data from the sprite atlas for transparency hit testing.
+  Future<void> _loadAtlasPixelData() async {
+    final image = _spriteAtlas.image;
+    _atlasPixelWidth = image.width;
+    _atlasPixelHeight = image.height;
+    _atlasPixelData = await image.toByteData(
+      format: ui.ImageByteFormat.rawRgba,
+    );
   }
 
   /// Recognizes taps for markers.
@@ -88,6 +144,8 @@ class RenderSpriteMarkerLayer extends RenderBox {
   set spriteAtlas(SpriteAtlas value) {
     if (_spriteAtlas != value) {
       _spriteAtlas = value;
+      _atlasPixelData = null; // Invalidate cached pixel data
+      _loadAtlasPixelData();
       markNeedsPaint();
     }
   }
@@ -116,7 +174,6 @@ class RenderSpriteMarkerLayer extends RenderBox {
     }
   }
 
-
   AnimationPlayer? get animationPlayer => _animationPlayer;
   set animationPlayer(AnimationPlayer? value) {
     if (_animationPlayer != value) {
@@ -133,28 +190,21 @@ class RenderSpriteMarkerLayer extends RenderBox {
 
   @override
   void paint(PaintingContext context, Offset offset) {
-    if (_markers.isEmpty) {
-      return;
-    }
+    final int markerCount = _markers.length;
+    if (markerCount == 0) return;
 
     final Canvas canvas = context.canvas;
-    // final List<SpriteMarker> visibleMarkers = _cullMarkers
-    //     ? _getVisibleMarkers()
-    //     : _markers;
 
-    // if (visibleMarkers.isEmpty) {
-    //   return;
-    // }
-
-    if (rectList == null || rectList!.length < _markers.length * 4) {
-      rectList = Float32List(_markers.length * 4);
+    // Ensure buffers are large enough (grow only, never shrink)
+    final int requiredSize = markerCount * 4;
+    if (rectList == null || rectList!.length < requiredSize) {
+      rectList = Float32List(requiredSize);
+    }
+    if (transformList == null || transformList!.length < requiredSize) {
+      transformList = Float32List(requiredSize);
     }
 
-    if (transformList == null || transformList!.length < _markers.length * 4) {
-      transformList = Float32List(_markers.length * 4);
-    }
-      
-    _drawSpritesUsingAtlas(canvas, markers, offset);
+    _drawSpritesUsingAtlas(canvas, _markers, offset);
   }
 
   /// Gets markers that are visible within the current viewport.
@@ -183,113 +233,109 @@ class RenderSpriteMarkerLayer extends RenderBox {
     ..style = PaintingStyle.fill
     ..blendMode = BlendMode.srcOver
     ..filterQuality = FilterQuality.high;
+
   /// Draws all visible sprites using the efficient drawRawAtlas method.
   void _drawSpritesUsingAtlas(
-  Canvas canvas,
-  List<SpriteMarker> visibleMarkers,
-  Offset offset,
-) {
-  final int markerCount = visibleMarkers.length;
-  final cameraRect = _camera.crs.projection.bounds;
- 
+    Canvas canvas,
+    List<SpriteMarker> visibleMarkers,
+    Offset offset,
+  ) {
+    final int markerCount = visibleMarkers.length;
+    final cameraRect = _camera.crs.projection.bounds;
 
-  int writeIndex = 0;
-  
-  for (int i = 0; i < markerCount; i++) {
-    final SpriteMarker marker = visibleMarkers[i];
-    if (!marker.isVisible) continue;
+    // Cache camera rotation once per frame
+    final double cameraRotationRad = _camera.rotationRad;
 
-    // Cache polymorphic accesses
-    final int spriteIndex = marker.spriteIndex;
-    final double rotation = marker.rotation;
-    final bool counterRotate = marker.counterRotate;
-    final double markerScale = marker.scale;
-    final Alignment anchor = marker.anchor;
+    // Cache projection parameters once per frame for efficient batch conversion
+    final projCache = _ProjectionCache.fromCamera(_camera);
 
-    // Convert world → screen
-    final Offset screenOffset = _camera.getOffsetFromOrigin(marker.position);
+    // Direct buffer references to avoid repeated null checks
+    final Float32List transforms = transformList!;
+    final Float32List rects = rectList!;
 
-    final SpriteInfo spriteInfo = _spriteAtlas.getSpriteInfo(spriteIndex);
+    int writeIndex = 0;
 
-    if (spriteInfo.width <= 0 || spriteInfo.height <= 0) continue;
+    for (int i = 0; i < markerCount; i++) {
+      final SpriteMarker marker = visibleMarkers[i];
+      if (!marker.isVisible) continue;
 
-    double totalRotation = rotation;
-    if (counterRotate) {
-      totalRotation -= _camera.rotationRad;
-    }
+      // Cache polymorphic accesses
+      final int spriteIndex = marker.spriteIndex;
+      final SpriteInfo spriteInfo = _spriteAtlas.getSpriteInfo(spriteIndex);
 
-  
+      // Early continue for invalid sprites
+      final double spriteWidth = spriteInfo.width;
+      final double spriteHeight = spriteInfo.height;
+      if (spriteWidth <= 0 || spriteHeight <= 0) continue;
 
-    final double scale = marker.spriteSizeInMeters
-        ? (markerScale * _metersToPixels(marker.position, 2))
-        : markerScale;
+      final double markerScale = marker.scale;
+      final bool spriteSizeInMeters = marker.spriteSizeInMeters;
 
-    if (scale <= 0) continue;
+      final double scale = spriteSizeInMeters
+          ? (markerScale * _metersToPixels(marker.position, 2))
+          : markerScale;
 
-    // Convert Alignment (-1..1) → anchor in pixels
-    final double anchorX =
-        spriteInfo.width * (anchor.x + 1.0) * 0.5;
-    final double anchorY =
-        spriteInfo.height * (anchor.y + 1.0) * 0.5;
+      if (scale <= 0) continue;
 
-    final double dx = screenOffset.dx + offset.dx  + marker.transform.dx;
-    final double dy = screenOffset.dy + offset.dy + marker.transform.dy;
+      // Convert world → screen using cached projection (much faster than getOffsetFromOrigin)
+      final Offset screenOffset = projCache.latLngToOffset(marker.position);
 
-    // Compute transform directly (no RSTransform allocation)
+      double totalRotation = marker.rotation;
+      if (marker.counterRotate) {
+        totalRotation -= cameraRotationRad;
+      }
+
+      // Convert Alignment (-1..1) → anchor in pixels
+      final Alignment anchor = marker.anchor;
+      final double anchorX = spriteWidth * (anchor.x + 1.0) * 0.5;
+      final double anchorY = spriteHeight * (anchor.y + 1.0) * 0.5;
+
+      final double dx = screenOffset.dx + offset.dx + marker.transform.dx;
+      final double dy = screenOffset.dy + offset.dy + marker.transform.dy;
+
+      // Compute transform directly (avoid RSTransform allocation)
       double scos = scale;
-    double ssin = 0.0;
-    if(totalRotation != 0){
-         scos = math.cos(totalRotation) * scale;
-     ssin = math.sin(totalRotation) * scale;
+      double ssin = 0.0;
+      if (totalRotation != 0.0) {
+        scos = math.cos(totalRotation) * scale;
+        ssin = math.sin(totalRotation) * scale;
+      }
+
+      final int t = writeIndex * 4;
+
+      transforms[t] = scos;
+      transforms[t + 1] = ssin;
+      transforms[t + 2] = dx - anchorX * scos + anchorY * ssin;
+      transforms[t + 3] = dy - anchorX * ssin - anchorY * scos;
+
+      rects[t] = spriteInfo.x;
+      rects[t + 1] = spriteInfo.y;
+      rects[t + 2] = spriteInfo.x + spriteWidth;
+      rects[t + 3] = spriteInfo.y + spriteHeight;
+
+      writeIndex++;
     }
-   
 
-    final int t = writeIndex * 4;
+    if (writeIndex == 0) return;
 
-    transformList![t + 0] = scos;
-    transformList![t + 1] = ssin;
-    transformList![t + 2] = dx - anchorX * scos + anchorY * ssin;
-    transformList![t + 3] = dy - anchorX * ssin - anchorY * scos;
+    const int kAtlasBatchSize = 256; // skwasm-safe
 
-    rectList![t + 0] = spriteInfo.x;
-    rectList![t + 1] = spriteInfo.y;
-    rectList![t + 2] = spriteInfo.x + spriteInfo.width;
-    rectList![t + 3] = spriteInfo.y + spriteInfo.height;
+    for (int start = 0; start < writeIndex; start += kAtlasBatchSize) {
+      final int count = (start + kAtlasBatchSize <= writeIndex)
+          ? kAtlasBatchSize
+          : (writeIndex - start);
 
-    writeIndex++;
+      canvas.drawRawAtlas(
+        _spriteAtlas.image,
+        Float32List.sublistView(transforms, start * 4, (start + count) * 4),
+        Float32List.sublistView(rects, start * 4, (start + count) * 4),
+        null,
+        null,
+        cameraRect,
+        spritePaint,
+      );
+    }
   }
-
-  if (writeIndex == 0) return;
-
-
-
-  const int kAtlasBatchSize = 256; // skwasm-safe
-
-  for (int start = 0; start < writeIndex; start += kAtlasBatchSize) {
-    final int count = (start + kAtlasBatchSize <= writeIndex)
-        ? kAtlasBatchSize
-        : (writeIndex - start);
-
-    canvas.drawRawAtlas(
-      _spriteAtlas.image,
-      Float32List.sublistView(
-        transformList!,
-        start * 4,
-        (start + count) * 4,
-      ),
-      Float32List.sublistView(
-        rectList!,
-        start * 4,
-        (start + count) * 4,
-      ),
-      null,
-      null,
-      cameraRect,
-      spritePaint,
-    );
-  }
-}
-
 
   @override
   bool hitTestSelf(Offset position) {
@@ -343,20 +389,28 @@ class RenderSpriteMarkerLayer extends RenderBox {
   }
 
   /// Finds the index of the marker at the given local position, or null if none.
+  /// Uses two-layer hit testing: first bounding rect, then pixel transparency.
   int? _findMarkerAtPosition(Offset localPosition) {
-    final double rotationRad = _camera.rotationRad;
-    final double cosR = math.cos(-rotationRad);
-    final double sinR = math.sin(-rotationRad);
+    final double cameraRotationRad = _camera.rotationRad;
+
+    // Cache projection parameters for efficient batch conversion
+    final projCache = _ProjectionCache.fromCamera(_camera);
 
     for (int i = _markers.length - 1; i >= 0; i--) {
       final SpriteMarker marker = _markers[i];
-      if (marker is SpriteSequenceMarker && !marker.isVisible) continue;
-      final Offset screenOffset = _camera.getOffsetFromOrigin(marker.position);
+      if (!marker.isVisible) continue;
+
+      // Use cached projection instead of expensive getOffsetFromOrigin
+      final Offset screenOffset = projCache.latLngToOffset(marker.position);
 
       // Get sprite info for hit testing
       final SpriteInfo spriteInfo = _spriteAtlas.getSpriteInfo(
         marker.spriteIndex,
       );
+      final double spriteWidth = spriteInfo.width;
+      final double spriteHeight = spriteInfo.height;
+
+      if (spriteWidth <= 0 || spriteHeight <= 0) continue;
 
       final double scale = marker.spriteSizeInMeters
           ? (marker.scale * _metersToPixels(marker.position, 2))
@@ -364,37 +418,100 @@ class RenderSpriteMarkerLayer extends RenderBox {
 
       if (!scale.isFinite || scale <= 0) continue;
 
-      // Convert Alignment (-1.0 to 1.0) to anchor point (0.0 to 1.0)
-      final double anchorX = spriteInfo.width * (marker.anchor.x + 1.0) / 2.0;
-      final double anchorY = spriteInfo.height * (marker.anchor.y + 1.0) / 2.0;
+      // Convert Alignment (-1.0 to 1.0) to anchor point
+      final Alignment anchor = marker.anchor;
+      final double anchorX = spriteWidth * (anchor.x + 1.0) * 0.5;
+      final double anchorY = spriteHeight * (anchor.y + 1.0) * 0.5;
 
-      // Simple rectangular hit testing (axis-aligned, ignores rotation).
-      // Position refers to the anchor point.
-      final double width = spriteInfo.width * scale;
-      final double height = spriteInfo.height * scale;
+      final double width = spriteWidth * scale;
+      final double height = spriteHeight * scale;
 
-      // If marker rotates with map (rotate=false), its hit box rotates with map.
-      // If marker stays upright (rotate=true), its hit box stays upright.
-      // But we are in a rotated coordinate system (MobileLayerTransformer).
-      // So if rotate=true, the marker is counter-rotated visually.
-      // We need to check if localPosition is inside the rotated rect.
-
-      // For now, let's assume simple unrotated hit box in the transformed space
-      // This is an approximation but should work for small markers.
-      // TODO: Implement precise rotated hit testing.
-
-      final Rect hitRect = Rect.fromLTWH(
-        screenOffset.dx - (anchorX * scale),
-        screenOffset.dy - (anchorY * scale),
-        width,
-        height,
-      );
-
-      if (hitRect.contains(localPosition)) {
-        return i;
+      // Calculate marker total rotation
+      double totalRotation = marker.rotation;
+      if (marker.counterRotate) {
+        totalRotation -= cameraRotationRad;
       }
+
+      // Transform local position to marker-local coordinates
+      final double markerCenterX = screenOffset.dx + marker.transform.dx;
+      final double markerCenterY = screenOffset.dy + marker.transform.dy;
+
+      // Offset from marker anchor to hit point
+      double hitDx = localPosition.dx - markerCenterX;
+      double hitDy = localPosition.dy - markerCenterY;
+
+      // Rotate hit point into marker's local coordinate system if rotated
+      if (totalRotation != 0.0) {
+        final double cosR = math.cos(-totalRotation);
+        final double sinR = math.sin(-totalRotation);
+        final double rotatedDx = hitDx * cosR - hitDy * sinR;
+        final double rotatedDy = hitDx * sinR + hitDy * cosR;
+        hitDx = rotatedDx;
+        hitDy = rotatedDy;
+      }
+
+      // Convert to sprite-local coordinates (0,0 at top-left of sprite)
+      final double localX = hitDx + anchorX * scale;
+      final double localY = hitDy + anchorY * scale;
+
+      // First layer: bounding rect hit test
+      if (localX < 0 || localX >= width || localY < 0 || localY >= height) {
+        continue;
+      }
+
+      // Second layer: pixel transparency hit test
+      if (_isPixelTransparent(spriteInfo, localX, localY, scale)) {
+        continue;
+      }
+
+      return i;
     }
     return null;
+  }
+
+  /// Checks if the pixel at the given local coordinates is transparent.
+  /// [localX] and [localY] are in scaled screen coordinates relative to sprite top-left.
+  bool _isPixelTransparent(
+    SpriteInfo spriteInfo,
+    double localX,
+    double localY,
+    double scale,
+  ) {
+    final ByteData? pixelData = _atlasPixelData;
+    if (pixelData == null) {
+      // Pixel data not loaded yet, treat as opaque (pass hit test)
+      return false;
+    }
+
+    // Convert screen coordinates to sprite pixel coordinates
+    final int spritePixelX = (localX / scale).floor();
+    final int spritePixelY = (localY / scale).floor();
+
+    // Check bounds within sprite
+    if (spritePixelX < 0 ||
+        spritePixelX >= spriteInfo.width.toInt() ||
+        spritePixelY < 0 ||
+        spritePixelY >= spriteInfo.height.toInt()) {
+      return true; // Outside sprite bounds = transparent
+    }
+
+    // Calculate atlas pixel coordinates
+    final int atlasX = spriteInfo.x.toInt() + spritePixelX;
+    final int atlasY = spriteInfo.y.toInt() + spritePixelY;
+
+    // Bounds check for atlas
+    if (atlasX < 0 ||
+        atlasX >= _atlasPixelWidth ||
+        atlasY < 0 ||
+        atlasY >= _atlasPixelHeight) {
+      return true;
+    }
+
+    // RGBA format: 4 bytes per pixel, alpha is the 4th byte (index 3)
+    final int pixelIndex = (atlasY * _atlasPixelWidth + atlasX) * 4;
+    final int alpha = pixelData.getUint8(pixelIndex + 3);
+
+    return alpha < _alphaHitThreshold;
   }
 
   void _clearTapCandidate() {
