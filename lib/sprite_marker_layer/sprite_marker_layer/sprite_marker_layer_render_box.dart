@@ -17,11 +17,15 @@ class _ProjectionCache {
   final double originX;
   final double originY;
 
+  /// Width of one world in pixels at current zoom level.
+  final double worldWidthPixels;
+
   _ProjectionCache({
     required this.crs,
     required this.zoomScale,
     required this.originX,
     required this.originY,
+    required this.worldWidthPixels,
   });
 
   /// Creates a projection cache from the current camera state.
@@ -29,11 +33,19 @@ class _ProjectionCache {
     final crs = camera.crs;
     final zoomScale = crs.scale(camera.zoom);
     final origin = camera.pixelOrigin;
+
+    // Calculate world width in pixels (full 360° longitude span)
+    // Project longitude -180 and +180 at the equator to get world width
+    final (xMin, _) = crs.latLngToXY(const LatLng(0, -180), zoomScale);
+    final (xMax, _) = crs.latLngToXY(const LatLng(0, 180), zoomScale);
+    final worldWidth = xMax - xMin;
+
     return _ProjectionCache(
       crs: crs,
       zoomScale: zoomScale,
       originX: origin.dx,
       originY: origin.dy,
+      worldWidthPixels: worldWidth,
     );
   }
 
@@ -42,6 +54,82 @@ class _ProjectionCache {
   Offset latLngToOffset(LatLng point) {
     final (x, y) = crs.latLngToXY(point, zoomScale);
     return Offset(x - originX, y - originY);
+  }
+}
+
+/// Calculates which world copies are visible in the viewport.
+class _WorldWrapInfo {
+  /// List of horizontal offsets (in pixels) to add to marker positions
+  /// for each visible world copy. 0.0 = primary world.
+  final List<double> worldOffsets;
+
+  /// Width of one world in pixels.
+  final double worldWidthPixels;
+
+  /// Whether world wrapping is active (more than one world visible).
+  bool get isWrapping => worldOffsets.length > 1;
+
+  _WorldWrapInfo(this.worldOffsets, this.worldWidthPixels);
+
+  /// Calculates visible world copies based on viewport and world width.
+  factory _WorldWrapInfo.calculate({
+    required double viewportWidth,
+    required double worldWidthPixels,
+    required double originX,
+  }) {
+    // If world width is invalid, no wrapping
+    if (worldWidthPixels <= 0) {
+      return _WorldWrapInfo(const [0.0], 0);
+    }
+
+    // If world is wider than viewport, only one world is visible
+    // But we still need to handle the case where we're viewing a different world copy
+    if (worldWidthPixels >= viewportWidth) {
+      // Find which world copy the viewport center is in
+      final double viewportCenter = originX + viewportWidth / 2;
+      final int centerWorldIndex = (viewportCenter / worldWidthPixels).floor();
+
+      // Always include the center world and its immediate neighbors for smooth transitions
+      final List<double> offsets = [
+        (centerWorldIndex - 1) * worldWidthPixels,
+        centerWorldIndex * worldWidthPixels,
+        (centerWorldIndex + 1) * worldWidthPixels,
+      ];
+
+      // Sort so closest to 0 comes first
+      offsets.sort((a, b) => a.abs().compareTo(b.abs()));
+
+      return _WorldWrapInfo(offsets, worldWidthPixels);
+    }
+
+    final List<double> offsets = [];
+
+    // The viewport in global pixel coordinates spans [originX, originX + viewportWidth]
+    // We want to find all world copies that could have visible markers.
+
+    // Calculate the world index range with buffer for smooth panning
+    // Use floor-1 and ceil+1 to ensure we always include neighboring worlds
+    final int minWorldIndex = (originX / worldWidthPixels).floor() - 1;
+    final int maxWorldIndex =
+        ((originX + viewportWidth) / worldWidthPixels).ceil() + 1;
+
+    for (
+      int worldIndex = minWorldIndex;
+      worldIndex <= maxWorldIndex;
+      worldIndex++
+    ) {
+      offsets.add(worldIndex * worldWidthPixels);
+    }
+
+    // Always ensure at least primary world is included
+    if (offsets.isEmpty) {
+      return _WorldWrapInfo(const [0.0], worldWidthPixels);
+    }
+
+    // Sort offsets so primary world (closest to 0) comes first
+    offsets.sort((a, b) => a.abs().compareTo(b.abs()));
+
+    return _WorldWrapInfo(offsets, worldWidthPixels);
   }
 }
 
@@ -195,27 +283,7 @@ class RenderSpriteMarkerLayer extends RenderBox {
 
     final Canvas canvas = context.canvas;
 
-    // Ensure buffers are large enough (grow only, never shrink)
-    final int requiredSize = markerCount * 4;
-    if (rectList == null || rectList!.length < requiredSize) {
-      rectList = Float32List(requiredSize);
-    }
-    if (transformList == null || transformList!.length < requiredSize) {
-      transformList = Float32List(requiredSize);
-    }
-
     _drawSpritesUsingAtlas(canvas, _markers, offset);
-  }
-
-  /// Gets markers that are visible within the current viewport.
-  /// Note not implemented as it takes more time than it saves.
-  /// It is faster to just draw all markers with the GPU.
-  /// Perhaps revisit this in the future.
-  List<SpriteMarker> _getVisibleMarkers() {
-    final bounds = _camera.visibleBounds;
-    return _markers.where((marker) {
-      return bounds.contains(marker.position);
-    }).toList();
   }
 
   /// Converts a distance in meters to screen pixels at the given [point].
@@ -249,12 +317,32 @@ class RenderSpriteMarkerLayer extends RenderBox {
     // Cache projection parameters once per frame for efficient batch conversion
     final projCache = _ProjectionCache.fromCamera(_camera);
 
+    // Calculate visible world copies for world wrapping
+    final worldWrapInfo = _WorldWrapInfo.calculate(
+      viewportWidth: size.width,
+      worldWidthPixels: projCache.worldWidthPixels,
+      originX: projCache.originX,
+    );
+
+    final int worldCount = worldWrapInfo.worldOffsets.length;
+
+    // Ensure buffers are large enough for all markers × all worlds
+    final int maxRequired = markerCount * worldCount * 4;
+    if (rectList == null || rectList!.length < maxRequired) {
+      rectList = Float32List(maxRequired);
+    }
+    if (transformList == null || transformList!.length < maxRequired) {
+      transformList = Float32List(maxRequired);
+    }
+
     // Direct buffer references to avoid repeated null checks
     final Float32List transforms = transformList!;
     final Float32List rects = rectList!;
 
     int writeIndex = 0;
 
+    // First pass: compute per-marker data that doesn't depend on world offset
+    // This avoids recalculating for each world copy
     for (int i = 0; i < markerCount; i++) {
       final SpriteMarker marker = visibleMarkers[i];
       if (!marker.isVisible) continue;
@@ -290,10 +378,11 @@ class RenderSpriteMarkerLayer extends RenderBox {
       final double anchorX = spriteWidth * (anchor.x + 1.0) * 0.5;
       final double anchorY = spriteHeight * (anchor.y + 1.0) * 0.5;
 
-      final double dx = screenOffset.dx + offset.dx + marker.transform.dx;
-      final double dy = screenOffset.dy + offset.dy + marker.transform.dy;
+      // Base position without world offset
+      final double baseDx = screenOffset.dx + offset.dx + marker.transform.dx;
+      final double baseDy = screenOffset.dy + offset.dy + marker.transform.dy;
 
-      // Compute transform directly (avoid RSTransform allocation)
+      // Compute transform components (same for all world copies)
       double scos = scale;
       double ssin = 0.0;
       if (totalRotation != 0.0) {
@@ -301,19 +390,48 @@ class RenderSpriteMarkerLayer extends RenderBox {
         ssin = math.sin(totalRotation) * scale;
       }
 
-      final int t = writeIndex * 4;
+      // Pre-compute anchor offset contribution
+      final double anchorOffsetX = -anchorX * scos + anchorY * ssin;
+      final double anchorOffsetY = -anchorX * ssin - anchorY * scos;
 
-      transforms[t] = scos;
-      transforms[t + 1] = ssin;
-      transforms[t + 2] = dx - anchorX * scos + anchorY * ssin;
-      transforms[t + 3] = dy - anchorX * ssin - anchorY * scos;
+      // Sprite rect is the same for all world copies
+      final double rectX = spriteInfo.x;
+      final double rectY = spriteInfo.y;
+      final double rectX2 = spriteInfo.x + spriteWidth;
+      final double rectY2 = spriteInfo.y + spriteHeight;
 
-      rects[t] = spriteInfo.x;
-      rects[t + 1] = spriteInfo.y;
-      rects[t + 2] = spriteInfo.x + spriteWidth;
-      rects[t + 3] = spriteInfo.y + spriteHeight;
+      // Draw marker on each visible world copy
+      for (int w = 0; w < worldCount; w++) {
+        final double worldOffset = worldWrapInfo.worldOffsets[w];
+        // Add worldOffset to shift marker to the correct world copy
+        final double dx = baseDx + worldOffset;
+        final double dy = baseDy;
 
-      writeIndex++;
+        // Quick viewport culling: skip if marker center is way outside viewport
+        // (with generous margin for large markers)
+        final double maxMarkerDimension =
+            math.max(spriteWidth, spriteHeight) * scale;
+        if (dx < -maxMarkerDimension ||
+            dx > size.width + maxMarkerDimension ||
+            dy < -maxMarkerDimension ||
+            dy > size.height + maxMarkerDimension) {
+          continue;
+        }
+
+        final int t = writeIndex * 4;
+
+        transforms[t] = scos;
+        transforms[t + 1] = ssin;
+        transforms[t + 2] = dx + anchorOffsetX;
+        transforms[t + 3] = dy + anchorOffsetY;
+
+        rects[t] = rectX;
+        rects[t + 1] = rectY;
+        rects[t + 2] = rectX2;
+        rects[t + 3] = rectY2;
+
+        writeIndex++;
+      }
     }
 
     if (writeIndex == 0) return;
@@ -390,12 +508,21 @@ class RenderSpriteMarkerLayer extends RenderBox {
 
   /// Finds the index of the marker at the given local position, or null if none.
   /// Uses two-layer hit testing: first bounding rect, then pixel transparency.
+  /// Handles world wrapping by testing against all visible world copies.
   int? _findMarkerAtPosition(Offset localPosition) {
     final double cameraRotationRad = _camera.rotationRad;
 
     // Cache projection parameters for efficient batch conversion
     final projCache = _ProjectionCache.fromCamera(_camera);
 
+    // Calculate visible world copies for world wrapping
+    final worldWrapInfo = _WorldWrapInfo.calculate(
+      viewportWidth: size.width,
+      worldWidthPixels: projCache.worldWidthPixels,
+      originX: projCache.originX,
+    );
+
+    // Iterate markers in reverse (topmost first)
     for (int i = _markers.length - 1; i >= 0; i--) {
       final SpriteMarker marker = _markers[i];
       if (!marker.isVisible) continue;
@@ -432,39 +559,45 @@ class RenderSpriteMarkerLayer extends RenderBox {
         totalRotation -= cameraRotationRad;
       }
 
-      // Transform local position to marker-local coordinates
-      final double markerCenterX = screenOffset.dx + marker.transform.dx;
-      final double markerCenterY = screenOffset.dy + marker.transform.dy;
+      // Test hit against each visible world copy
+      for (final double worldOffset in worldWrapInfo.worldOffsets) {
+        // Transform local position to marker-local coordinates
+        // Add worldOffset to get the marker position on that world copy
+        final double markerCenterX =
+            screenOffset.dx + marker.transform.dx + worldOffset;
+        final double markerCenterY = screenOffset.dy + marker.transform.dy;
 
-      // Offset from marker anchor to hit point
-      double hitDx = localPosition.dx - markerCenterX;
-      double hitDy = localPosition.dy - markerCenterY;
+        // Offset from marker anchor to hit point
+        double hitDx = localPosition.dx - markerCenterX;
+        double hitDy = localPosition.dy - markerCenterY;
 
-      // Rotate hit point into marker's local coordinate system if rotated
-      if (totalRotation != 0.0) {
-        final double cosR = math.cos(-totalRotation);
-        final double sinR = math.sin(-totalRotation);
-        final double rotatedDx = hitDx * cosR - hitDy * sinR;
-        final double rotatedDy = hitDx * sinR + hitDy * cosR;
-        hitDx = rotatedDx;
-        hitDy = rotatedDy;
+        // Rotate hit point into marker's local coordinate system if rotated
+        if (totalRotation != 0.0) {
+          final double cosR = math.cos(-totalRotation);
+          final double sinR = math.sin(-totalRotation);
+          final double rotatedDx = hitDx * cosR - hitDy * sinR;
+          final double rotatedDy = hitDx * sinR + hitDy * cosR;
+          hitDx = rotatedDx;
+          hitDy = rotatedDy;
+        }
+
+        // Convert to sprite-local coordinates (0,0 at top-left of sprite)
+        final double localX = hitDx + anchorX * scale;
+        final double localY = hitDy + anchorY * scale;
+
+        // First layer: bounding rect hit test
+        if (localX < 0 || localX >= width || localY < 0 || localY >= height) {
+          continue;
+        }
+
+        // Second layer: pixel transparency hit test
+        if (_isPixelTransparent(spriteInfo, localX, localY, scale)) {
+          continue;
+        }
+
+        // Hit! Return this marker's index
+        return i;
       }
-
-      // Convert to sprite-local coordinates (0,0 at top-left of sprite)
-      final double localX = hitDx + anchorX * scale;
-      final double localY = hitDy + anchorY * scale;
-
-      // First layer: bounding rect hit test
-      if (localX < 0 || localX >= width || localY < 0 || localY >= height) {
-        continue;
-      }
-
-      // Second layer: pixel transparency hit test
-      if (_isPixelTransparent(spriteInfo, localX, localY, scale)) {
-        continue;
-      }
-
-      return i;
     }
     return null;
   }
