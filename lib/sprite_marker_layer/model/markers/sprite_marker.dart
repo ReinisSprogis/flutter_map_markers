@@ -4,34 +4,45 @@ import 'package:latlong2/latlong.dart' as coord;
 /// SpriteMarker represents a marker that renders a sprite from a sprite atlas
 /// at a specific geographic position.
  abstract class SpriteMarker {
+
+  /// Unique identifier for the marker.
   final String id;
+
+  /// Geographic position of the marker.
   coord.LatLng position;
-  double scale;
-  double rotation;
-  bool rotate;
-  /// Alpha transparency (0-255, where 255 is fully opaque).
-  int alpha;
-  /// Color tint to apply to the sprite. The alpha channel of this color is ignored;
-  /// use the [alpha] property for transparency.
-  Color color;
+
   /// Callback function that is called when the marker is tapped.
    VoidCallback? onTap;
-  /// Alignment anchor for the sprite. Defaults to center.
-  Alignment anchor;
   
-  /// Index of the sprite in the atlas (0-based).
-  int get spriteIndex;
+  /// Whether the marker is visible.
+  bool isVisible;
 
   SpriteMarker({
     required this.id,
     required this.position,
-    this.scale = 1.0,
-    this.rotation = 0.0,
-    this.rotate = false,
-    this.alpha = 255,
-    this.color = Colors.transparent,
     this.onTap,
-    this.anchor = Alignment.center,
-
+    required this.isVisible,
+    this.transform = Offset.zero,
   });
+
+    /// Index of the sprite in the atlas (0-based).
+  int get spriteIndex;
+
+  /// Returns the anchor alignment for the sprite.
+  Alignment get anchor;
+
+  /// Returns whether the sprite should counter-rotate against the map rotation.
+  bool get counterRotate;
+
+  /// Returns the scale factor for the sprite.
+  double get scale;
+  
+  /// Returns the rotation in radians for the sprite.
+  double get rotation;
+
+  /// Whether the sprite size is defined in meters (true) or pixels (false).
+  bool get spriteSizeInMeters;
+
+  /// An offset to apply to the sprite's screen position.
+  Offset transform;
 }

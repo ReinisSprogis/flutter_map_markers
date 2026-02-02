@@ -4,7 +4,7 @@ export 'marker_presets/marker_presets.dart';
 export 'sprite_marker_layer/sprite_marker_layer/sprite_marker_layer.dart';
 export 'sprite_marker_layer/model/markers/sprite_marker.dart';
 export 'sprite_marker_layer/model/sprite_atlas.dart';
-export 'sprite_marker_layer/model/markers/sprite_marker_frame.dart';
+export 'sprite_marker_layer/model/markers/sprite_frame_marker.dart';
 //export 'sprite_marker_layer/model/markers/sprite_marker_sequence.dart';
 //export 'sprite_marker_layer/model/sprite_marker_manager.dart';
 //export 'sprite_marker_layer/sprite_marker_layer_raw/sprite_marker_layer_raw.dart';

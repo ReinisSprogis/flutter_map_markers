@@ -44,7 +44,6 @@ class SpriteMarkerRenderLayer extends LeafRenderObjectWidget {
       ..markers = markers
       ..camera = camera
       ..cullMarkers = cullMarkers
-      ..spriteSizeInMeters = spriteSizeInMeters
       ..animationPlayer = animationPlayer;  
   }
 }

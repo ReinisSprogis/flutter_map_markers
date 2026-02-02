@@ -1,4 +1,4 @@
-import 'dart:math';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/gestures.dart';
@@ -16,7 +16,6 @@ class RenderSpriteMarkerLayer extends RenderBox {
   List<SpriteMarker> _markers;
   MapCamera _camera;
   bool _cullMarkers;
-  bool _spriteSizeInMeters;
   AnimationPlayer? _animationPlayer;
 
   /// Active pointers currently down for tap detection.
@@ -30,6 +29,9 @@ class RenderSpriteMarkerLayer extends RenderBox {
 
   /// Whether the tap sequence involved multi-touch at any time.
   bool _tapCandidateHadMultiTouch = false;
+   // Preallocate maximum possible size
+   Float32List? rectList; // = Float32List(markerCount * 4);
+   Float32List? transformList; // = Float32List(markerCount * 4);
 
   RenderSpriteMarkerLayer({
     required SpriteAtlas spriteAtlas,
@@ -42,7 +44,6 @@ class RenderSpriteMarkerLayer extends RenderBox {
        _markers = markers,
        _camera = camera,
        _cullMarkers = cullMarkers,
-       _spriteSizeInMeters = spriteSizeInMeters,
        _animationPlayer = animationPlayer {
     _startListening();
   }
@@ -115,13 +116,6 @@ class RenderSpriteMarkerLayer extends RenderBox {
     }
   }
 
-  bool get spriteSizeInMeters => _spriteSizeInMeters;
-  set spriteSizeInMeters(bool value) {
-    if (_spriteSizeInMeters != value) {
-      _spriteSizeInMeters = value;
-      markNeedsPaint();
-    }
-  }
 
   AnimationPlayer? get animationPlayer => _animationPlayer;
   set animationPlayer(AnimationPlayer? value) {
@@ -152,10 +146,21 @@ class RenderSpriteMarkerLayer extends RenderBox {
     //   return;
     // }
 
+    if (rectList == null || rectList!.length < _markers.length * 4) {
+      rectList = Float32List(_markers.length * 4);
+    }
+
+    if (transformList == null || transformList!.length < _markers.length * 4) {
+      transformList = Float32List(_markers.length * 4);
+    }
+      
     _drawSpritesUsingAtlas(canvas, markers, offset);
   }
 
   /// Gets markers that are visible within the current viewport.
+  /// Note not implemented as it takes more time than it saves.
+  /// It is faster to just draw all markers with the GPU.
+  /// Perhaps revisit this in the future.
   List<SpriteMarker> _getVisibleMarkers() {
     final bounds = _camera.visibleBounds;
     return _markers.where((marker) {
@@ -173,123 +178,118 @@ class RenderSpriteMarkerLayer extends RenderBox {
     return (p1 - p2).distance;
   }
 
+  Paint spritePaint = Paint()
+    ..isAntiAlias = true
+    ..style = PaintingStyle.fill
+    ..blendMode = BlendMode.srcOver
+    ..filterQuality = FilterQuality.high;
   /// Draws all visible sprites using the efficient drawRawAtlas method.
   void _drawSpritesUsingAtlas(
-    Canvas canvas,
-    List<SpriteMarker> visibleMarkers,
-    Offset offset,
-  ) {
-    final int markerCount = visibleMarkers.length;
+  Canvas canvas,
+  List<SpriteMarker> visibleMarkers,
+  Offset offset,
+) {
+  final int markerCount = visibleMarkers.length;
+  final cameraRect = _camera.crs.projection.bounds;
+ 
 
-    // Preallocate maximum possible size
-    final Float32List rectList = Float32List(markerCount * 4);
-    final Float32List transformList = Float32List(markerCount * 4);
+  int writeIndex = 0;
+  
+  for (int i = 0; i < markerCount; i++) {
+    final SpriteMarker marker = visibleMarkers[i];
+    if (!marker.isVisible) continue;
 
-    int writeIndex = 0;
+    // Cache polymorphic accesses
+    final int spriteIndex = marker.spriteIndex;
+    final double rotation = marker.rotation;
+    final bool counterRotate = marker.counterRotate;
+    final double markerScale = marker.scale;
+    final Alignment anchor = marker.anchor;
 
-    for (int i = 0; i < markerCount; i++) {
-      final SpriteMarker marker = visibleMarkers[i];
-      if (!marker.isVisible) continue;
-      final double rotation = marker.rotation;
-      final bool counterRotate = marker.counterRotate;
-      final double scale0 = marker.scale;
-      final Alignment anchor = marker.anchor;
-      final int spriteIndex = marker.spriteIndex;
+    // Convert world → screen
+    final Offset screenOffset = _camera.getOffsetFromOrigin(marker.position);
 
-      // Convert world → screen
-      final Offset screenOffset = _camera.getOffsetFromOrigin(marker.position);
+    final SpriteInfo spriteInfo = _spriteAtlas.getSpriteInfo(spriteIndex);
 
-      if (!screenOffset.dx.isFinite || !screenOffset.dy.isFinite) continue;
-      // print(' index ${marker.spriteIndex}');
-      final SpriteInfo spriteInfo = _spriteAtlas.getSpriteInfo(
-        marker.spriteIndex,
-      );
+    if (spriteInfo.width <= 0 || spriteInfo.height <= 0) continue;
 
-      if (spriteInfo.width <= 0 || spriteInfo.height <= 0) continue;
-     
-
-      double totalRotation = marker.rotation;
-      if (marker.counterRotate) {
-        totalRotation -= _camera.rotationRad;
-      }
-
-      if (!totalRotation.isFinite) continue;
-
-      final double scale = _spriteSizeInMeters
-          // Treat 1 sprite pixel as 1 meter.
-          // So a 48px-wide sprite will represent 48 meters when marker.scale==1.
-          ? (marker.scale * _metersToPixels(marker.position, 2))
-          : marker.scale;
-
-      if (scale <= 0) continue;
-
-      // Convert Alignment (-1.0 to 1.0) to anchor point (0.0 to 1.0)
-      final double anchorX = spriteInfo.width * (marker.anchor.x + 1.0) / 2.0;
-      final double anchorY = spriteInfo.height * (marker.anchor.y + 1.0) / 2.0;
-
-      final double dx = screenOffset.dx + offset.dx;
-      final double dy = screenOffset.dy + offset.dy;
-       //AABB culling
-      if(dx < 0 || dy < 0) continue;
-      if(dx + spriteInfo.width > _camera.size.width) continue;
-      if(dy + spriteInfo.height > _camera.size.height) continue;
-      
-      if (!dx.isFinite || !dy.isFinite) continue;
-
-      final RSTransform transform = RSTransform.fromComponents(
-        rotation: totalRotation,
-        scale: scale,
-        anchorX: anchorX,
-        anchorY: anchorY,
-        translateX: dx,
-        translateY: dy,
-      );
-
-      final int t = writeIndex * 4;
-
-      transformList[t + 0] = transform.scos;
-      transformList[t + 1] = transform.ssin;
-      transformList[t + 2] = transform.tx;
-      transformList[t + 3] = transform.ty;
-
-      rectList[t + 0] = spriteInfo.x;
-      rectList[t + 1] = spriteInfo.y;
-      rectList[t + 2] = spriteInfo.x + spriteInfo.width;
-      rectList[t + 3] = spriteInfo.y + spriteInfo.height;
-
-      writeIndex++;
+    double totalRotation = rotation;
+    if (counterRotate) {
+      totalRotation -= _camera.rotationRad;
     }
 
-    if (writeIndex == 0) return;
+  
 
-    final Paint paint = Paint()
-      ..isAntiAlias = true
-      ..style = PaintingStyle.fill
-      ..blendMode = BlendMode.srcOver
-      ..filterQuality = FilterQuality.high;
+    final double scale = marker.spriteSizeInMeters
+        ? (markerScale * _metersToPixels(marker.position, 2))
+        : markerScale;
 
-    // =========================
-    // CHUNKED DRAWING (KEY PART)
-    // =========================
+    if (scale <= 0) continue;
 
-    const int kAtlasBatchSize = 256; // safe for skwasm
+    // Convert Alignment (-1..1) → anchor in pixels
+    final double anchorX =
+        spriteInfo.width * (anchor.x + 1.0) * 0.5;
+    final double anchorY =
+        spriteInfo.height * (anchor.y + 1.0) * 0.5;
 
-    for (int start = 0; start < writeIndex; start += kAtlasBatchSize) {
-      final int count = (start + kAtlasBatchSize <= writeIndex)
-          ? kAtlasBatchSize
-          : (writeIndex - start);
+    final double dx = screenOffset.dx + offset.dx  + marker.transform.dx;
+    final double dy = screenOffset.dy + offset.dy + marker.transform.dy;
 
-      canvas.drawRawAtlas(
-        _spriteAtlas.image,
-        Float32List.sublistView(transformList, start * 4, (start + count) * 4),
-        Float32List.sublistView(rectList, start * 4, (start + count) * 4),
-        null, // colors
-        null,
-        null,
-        paint,
-      );
+    // Compute transform directly (no RSTransform allocation)
+      double scos = scale;
+    double ssin = 0.0;
+    if(totalRotation != 0){
+         scos = math.cos(totalRotation) * scale;
+     ssin = math.sin(totalRotation) * scale;
     }
+   
+
+    final int t = writeIndex * 4;
+
+    transformList![t + 0] = scos;
+    transformList![t + 1] = ssin;
+    transformList![t + 2] = dx - anchorX * scos + anchorY * ssin;
+    transformList![t + 3] = dy - anchorX * ssin - anchorY * scos;
+
+    rectList![t + 0] = spriteInfo.x;
+    rectList![t + 1] = spriteInfo.y;
+    rectList![t + 2] = spriteInfo.x + spriteInfo.width;
+    rectList![t + 3] = spriteInfo.y + spriteInfo.height;
+
+    writeIndex++;
   }
+
+  if (writeIndex == 0) return;
+
+
+
+  const int kAtlasBatchSize = 256; // skwasm-safe
+
+  for (int start = 0; start < writeIndex; start += kAtlasBatchSize) {
+    final int count = (start + kAtlasBatchSize <= writeIndex)
+        ? kAtlasBatchSize
+        : (writeIndex - start);
+
+    canvas.drawRawAtlas(
+      _spriteAtlas.image,
+      Float32List.sublistView(
+        transformList!,
+        start * 4,
+        (start + count) * 4,
+      ),
+      Float32List.sublistView(
+        rectList!,
+        start * 4,
+        (start + count) * 4,
+      ),
+      null,
+      null,
+      cameraRect,
+      spritePaint,
+    );
+  }
+}
+
 
   @override
   bool hitTestSelf(Offset position) {
@@ -345,8 +345,8 @@ class RenderSpriteMarkerLayer extends RenderBox {
   /// Finds the index of the marker at the given local position, or null if none.
   int? _findMarkerAtPosition(Offset localPosition) {
     final double rotationRad = _camera.rotationRad;
-    final double cosR = cos(-rotationRad);
-    final double sinR = sin(-rotationRad);
+    final double cosR = math.cos(-rotationRad);
+    final double sinR = math.sin(-rotationRad);
 
     for (int i = _markers.length - 1; i >= 0; i--) {
       final SpriteMarker marker = _markers[i];
@@ -358,7 +358,7 @@ class RenderSpriteMarkerLayer extends RenderBox {
         marker.spriteIndex,
       );
 
-      final double scale = _spriteSizeInMeters
+      final double scale = marker.spriteSizeInMeters
           ? (marker.scale * _metersToPixels(marker.position, 2))
           : marker.scale;
 

@@ -4,7 +4,7 @@ class AnimationPlayer extends ChangeNotifier {
   List<SpriteMarker> markers = [];
   late final _SpriteTicker _ticker;
   final Random _random = Random();
-
+  VoidCallback onPlayerStop = () {};
   AnimationPlayer({required TickerProvider vsync}) {
     _ticker = _SpriteTicker(vsync, _onTick);
   }
@@ -27,16 +27,22 @@ class AnimationPlayer extends ChangeNotifier {
   }
 
   void start() => _ticker.start();
-  void stop() => _ticker.stop();
+  void stop() {
+    _ticker.stop();
+    onPlayerStop();
+  } 
+
+ 
 
   void _onTick(Duration delta) {
     bool anyAnimating = false;
     bool anyFrameChanged = false;
-final snapshot = List<SpriteMarker>.from(markers);  
+    // final snapshot = List<SpriteMarker>.from(markers);
 
-    for (final marker in snapshot) {
-      
-      if (marker is SpriteMarkerSequence && marker.animating && marker.isVisible) {
+    for (final marker in markers) {
+      if (marker is SpriteSequenceMarker &&
+          marker.animating &&
+          marker.isVisible) {
         final (changed, stillAnimating) = _updateFrame(marker, delta);
         anyAnimating = anyAnimating || stillAnimating;
         anyFrameChanged = anyFrameChanged || changed;
@@ -48,13 +54,15 @@ final snapshot = List<SpriteMarker>.from(markers);
   }
 
   (bool frameChanged, bool stillAnimating) _updateFrame(
-    SpriteMarkerSequence marker,
+    SpriteSequenceMarker marker,
     Duration delta,
   ) {
     final sequence = marker.sequences[marker.sequenceIndex];
     final spriteCount = sequence.frames.length;
+
     if (spriteCount == 0) return (false, false);
 
+    // Clamp huge deltas to avoid big jumps
     final clampedDelta = delta > const Duration(milliseconds: 200)
         ? const Duration(milliseconds: 200)
         : delta;
@@ -66,6 +74,7 @@ final snapshot = List<SpriteMarker>.from(markers);
 
     bool frameChanged = false;
 
+    // Advance sprite frames if enough time has accumulated
     while (marker._accumulated >= frameDuration) {
       marker._accumulated -= frameDuration;
       frameChanged = true;
@@ -86,14 +95,10 @@ final snapshot = List<SpriteMarker>.from(markers);
             idx = spriteCount - 1;
             marker.animating = false;
             marker._accumulated = Duration.zero;
-            sequence.frameIndex = idx;
-            marker.sequences[marker.sequenceIndex]
-                .onAnimationEnd
-                ?.call();
-            return (true, false);
+            sequence.onAnimationEnd?.call();
+            break;
           }
           break;
-
         case AnimationMode.reverseOnce:
           if (idx > 0) {
             idx--;
@@ -101,14 +106,10 @@ final snapshot = List<SpriteMarker>.from(markers);
             idx = 0;
             marker.animating = false;
             marker._accumulated = Duration.zero;
-            sequence.frameIndex = idx;
-            marker.sequences[marker.sequenceIndex]
-                .onAnimationEnd
-                ?.call();
-            return (true, false);
+            sequence.onAnimationEnd?.call();
+            break;
           }
           break;
-
         case AnimationMode.pingPong:
           if (sequence.isReversing) {
             idx--;
@@ -128,7 +129,19 @@ final snapshot = List<SpriteMarker>.from(markers);
           idx = _random.nextInt(spriteCount);
           break;
       }
+
       sequence.frameIndex = idx;
+
+      if (frameChanged && sequence.onSequenceFrame != null) {
+        sequence.onSequenceFrame!(idx);
+      }
+
+      if (!marker.animating) break;
+    }
+
+    if (sequence.onUpdate != null && marker.animating) {
+      sequence.onUpdate!(clampedDelta.inMilliseconds);
+      frameChanged = true;
     }
 
     return (frameChanged, marker.animating);

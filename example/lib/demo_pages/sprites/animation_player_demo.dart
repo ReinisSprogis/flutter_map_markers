@@ -16,8 +16,9 @@ class AnimationPlayerDemo extends StatefulWidget {
   State<AnimationPlayerDemo> createState() => _AnimationPlayerDemoState();
 }
 
-class _AnimationPlayerDemoState extends State<AnimationPlayerDemo> with SingleTickerProviderStateMixin {
-   SpriteAtlas? _spriteAtlas;
+class _AnimationPlayerDemoState extends State<AnimationPlayerDemo>
+    with SingleTickerProviderStateMixin {
+  SpriteAtlas? _spriteAtlas;
   List<SpriteMarker> markers = [];
   int markerCount = 1000;
   late final AnimationPlayer _animationPlayer;
@@ -48,12 +49,10 @@ class _AnimationPlayerDemoState extends State<AnimationPlayerDemo> with SingleTi
   }
 
   @override
-  void dispose() { 
+  void dispose() {
     _animationPlayer.dispose();
     super.dispose();
-    
   }
-
 
   void _generateSprites(int count) {
     final london = LatLng(51.5074, -0.1278);
@@ -61,7 +60,7 @@ class _AnimationPlayerDemoState extends State<AnimationPlayerDemo> with SingleTi
     //random rotation and scale for each marker
 
     setState(() {
-      markers = List<SpriteMarkerSequence>.generate(count, (index) {
+      markers = List<SpriteSequenceMarker>.generate(count, (index) {
         //rotation in radians
         double rotation = random.nextDouble() * 2 * pi;
         double scale = 0.50; // + random.nextDouble() * 0.3;
@@ -71,32 +70,37 @@ class _AnimationPlayerDemoState extends State<AnimationPlayerDemo> with SingleTi
           random,
           maxDistance: 10.0,
         );
-        return SpriteMarkerSequence(
+        return SpriteSequenceMarker(
           sequenceIndex: index % 2,
           id: 'marker_$index',
-          scale: scale,
-          rotate: false,
           animating: true,
-          
+
           sequences: [
-            Sequence(frames: [6, 7],fps: 30),
-            Sequence(frames: [0, 1, 2, 3, 4, 5],fps: 60,mode: AnimationMode.loopForward),
+            Sequence(
+              counterRotate: true,
+               anchor: Alignment.center,
+              frames: [6, 7], fps: 30),
+            Sequence(
+              anchor: Alignment.center,
+              frames: [0, 1, 2, 3, 4, 5],
+              fps: 60,
+              mode: AnimationMode.loopForward,
+            ),
           ],
           // rotation: rotation,
           position: position,
-          anchor: Alignment.center,
         );
       });
     });
     _animationPlayer.markers = markers;
-    if(!_animationPlayer.isRunning) {
+    if (!_animationPlayer.isRunning) {
       _animationPlayer.start();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-     return Scaffold(
+    return Scaffold(
       appBar: AppBar(title: const Text('Sprite Marker Animation Player Demo')),
       drawer: const AppDrawer(),
       body: _spriteAtlas == null
@@ -119,12 +123,12 @@ class _AnimationPlayerDemoState extends State<AnimationPlayerDemo> with SingleTi
                       urlTemplate:
                           'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                     ),
-                    if(_spriteAtlas != null)
-                    SpriteMarkerLayer(
-                      spriteAtlas: _spriteAtlas!,
-                      markers: markers,
-                      animationPlayer: _animationPlayer,
-                    ),
+                    if (_spriteAtlas != null)
+                      SpriteMarkerLayer(
+                        spriteAtlas: _spriteAtlas!,
+                        markers: markers,
+                        animationPlayer: _animationPlayer,
+                      ),
                   ],
                 ),
                 Positioned(
@@ -152,12 +156,10 @@ class _AnimationPlayerDemoState extends State<AnimationPlayerDemo> with SingleTi
                             max: 200000,
                             value: markerCount.toDouble(),
                             onChanged: (v) {
-
                               setState(() {
                                 markerCount = v.toInt();
-                                  _generateSprites(v.toInt());
+                                _generateSprites(v.toInt());
                               });
-                              
                             },
                           ),
                         ),

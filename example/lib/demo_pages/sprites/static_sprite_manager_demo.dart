@@ -19,7 +19,7 @@ class StaticSpriteManagerDemo extends StatefulWidget {
 
 class _StaticSpriteManagerDemoState extends State<StaticSpriteManagerDemo> {
   SpriteAtlas? _spriteAtlas;
-  List<SpriteMarkerFrame> markers = [];
+  List<SpriteFrameMarker> markers = [];
   int markerCount = 1000;
   int lastTime = 0;
   @override
@@ -52,7 +52,7 @@ class _StaticSpriteManagerDemoState extends State<StaticSpriteManagerDemo> {
     //random rotation and scale for each marker
 
     setState(() {
-      markers = List<SpriteMarkerFrame>.generate(count, (index) {
+      markers = List<SpriteFrameMarker>.generate(count, (index) {
         //rotation in radians
 
         final position = Utility.clusterPoint(
@@ -60,10 +60,10 @@ class _StaticSpriteManagerDemoState extends State<StaticSpriteManagerDemo> {
           random,
           maxDistance: 10.0,
         );
-        return SpriteMarkerFrame(
+        return SpriteFrameMarker(
           id: 'marker_$index',
           scale: 1.0,
-          rotate: true,
+          counterRotate: true,
           anchor: Alignment.bottomCenter,
           position: position,
           spriteIndex: 0,

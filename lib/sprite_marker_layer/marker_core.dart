@@ -7,4 +7,4 @@ import 'package:flutter_map_markers/sprite_marker_layer/model/markers/sprite_mar
 import 'package:flutter_map_markers/sprite_marker_layer/model/sequence.dart';
 
 part 'model/animation_player.dart';
-part 'model/markers/sprite_marker_sequence.dart';
+part 'model/markers/sprite_sequence_marker.dart';

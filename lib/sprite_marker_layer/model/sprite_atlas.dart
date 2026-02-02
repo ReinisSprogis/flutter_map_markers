@@ -4,11 +4,15 @@ import 'dart:ui' as ui;
 class SpriteInfo {
   /// Creates sprite information with position and size within an atlas.
   const SpriteInfo({
+    this.id,
     required this.x,
     required this.y,
     required this.width,
     required this.height,
   });
+
+  /// Optional unique identifier for the sprite.
+  final String? id;
 
   /// X position of the sprite in the atlas.
   final double x;
@@ -30,15 +34,16 @@ class SpriteInfo {
           x == other.x &&
           y == other.y &&
           width == other.width &&
-          height == other.height;
+          height == other.height &&
+          id == other.id;
 
   @override
   int get hashCode =>
-      x.hashCode ^ y.hashCode ^ width.hashCode ^ height.hashCode;
+      x.hashCode ^ y.hashCode ^ width.hashCode ^ height.hashCode ^ (id?.hashCode ?? 0);
 
   @override
   String toString() =>
-      'SpriteInfo(x: $x, y: $y, width: $width, height: $height)';
+      'SpriteInfo(x: $x, y: $y, width: $width, height: $height, id: $id)';
 }
 
 /// A sprite atlas containing an image and information about sprites within it.

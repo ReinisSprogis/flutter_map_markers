@@ -27,7 +27,7 @@ class _AircraftSpriteMarkerDemoPageState
     with SingleTickerProviderStateMixin {
   late final AnimationController _animationController;
   SpriteAtlas? _spriteAtlas;
-  List<SpriteMarkerFrame> _markers = [];
+  List<SpriteFrameMarker> _markers = [];
   final Map<String, double> _velocityByMarkerId = <String, double>{};
   final Map<String, double> _scaleByMarkerId = <String, double>{};
   final Distance _distance = Distance();
@@ -88,12 +88,12 @@ class _AircraftSpriteMarkerDemoPageState
       final List<dynamic> states = (data['states'] as List<dynamic>?) ?? [];
 
       final Random random = Random();
-      final Map<String, SpriteMarkerFrame> previousById =
-          <String, SpriteMarkerFrame>{
+      final Map<String, SpriteFrameMarker> previousById =
+          <String, SpriteFrameMarker>{
             for (final marker in _markers) marker.id: marker,
           };
 
-      final List<SpriteMarkerFrame> markers = <SpriteMarkerFrame>[];
+      final List<SpriteFrameMarker> markers = <SpriteFrameMarker>[];
       for (final state in states) {
         if (state is! List) continue;
 
@@ -134,9 +134,9 @@ class _AircraftSpriteMarkerDemoPageState
           () => 0.5 + random.nextDouble() * 0.3,
         );
         markers.add(
-          SpriteMarkerFrame(
+          SpriteFrameMarker(
             id: markerId,
-            rotate: false,
+           counterRotate: false,
             scale: scale,
             rotation: rotation,
             position: position,
@@ -218,13 +218,13 @@ class _AircraftSpriteMarkerDemoPageState
       //   newLng = marker.position.longitude.clamp(minLng, maxLng);
       // }
 
-      _markers[i] = SpriteMarkerFrame(
+      _markers[i] = SpriteFrameMarker(
         id: marker.id,
         position: LatLng(newLat, newLng),
         spriteIndex: frameIndex,
         scale: marker.scale,
         rotation: newRotation,
-        rotate: marker.rotate,
+        counterRotate: marker.counterRotate,
       );
     }
   }
@@ -264,7 +264,7 @@ class _AircraftSpriteMarkerDemoPageState
     //random rotation and scale for each marker
 
     setState(() {
-      _markers = List<SpriteMarkerFrame>.generate(count, (index) {
+      _markers = List<SpriteFrameMarker>.generate(count, (index) {
         //rotation in radians
         double rotation = random.nextDouble() * 2 * pi;
         double scale = 0.5; // + random.nextDouble() * 0.3;
@@ -273,10 +273,10 @@ class _AircraftSpriteMarkerDemoPageState
           random,
           maxDistance: 10.0,
         );
-        return SpriteMarkerFrame(
+        return SpriteFrameMarker(
           id: 'marker_$index',
           scale: scale,
-          rotate: true,
+          counterRotate: true,
           rotation: rotation,
           position: position,
           spriteIndex: index % 2,
@@ -307,9 +307,9 @@ class _AircraftSpriteMarkerDemoPageState
 
     setState(() {
       _markers.add(
-        SpriteMarkerFrame(
+        SpriteFrameMarker(
           id: 'marker_${_markers.length}',
-          rotate: false,
+          counterRotate: false,
           scale: scale,
           rotation: rotation,
           position: position,

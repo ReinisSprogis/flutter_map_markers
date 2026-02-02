@@ -1,4 +1,3 @@
-
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -14,13 +13,14 @@ class SpriteMarkerFrameLayerDemo extends StatefulWidget {
   const SpriteMarkerFrameLayerDemo({super.key});
 
   @override
-  State<SpriteMarkerFrameLayerDemo> createState() => _SpriteMarkerFrameLayerDemoState();
+  State<SpriteMarkerFrameLayerDemo> createState() =>
+      _SpriteMarkerFrameLayerDemoState();
 }
 
-class _SpriteMarkerFrameLayerDemoState extends State<SpriteMarkerFrameLayerDemo> {
- 
+class _SpriteMarkerFrameLayerDemoState
+    extends State<SpriteMarkerFrameLayerDemo> {
   SpriteAtlas? _spriteAtlas;
-  List<SpriteMarkerFrame> markers = [];
+  List<SpriteFrameMarker> markers = [];
   List<CircleMarker> circles = [];
   int markerCount = 1000;
   int lastTime = 0;
@@ -38,11 +38,10 @@ class _SpriteMarkerFrameLayerDemoState extends State<SpriteMarkerFrameLayerDemo>
     );
     final spriteAtlas = SpriteAtlas.custom(
       image: image,
-      sprites: DiamondMarkerAnim.sprites
+      sprites: DiamondMarkerAnim.sprites,
     );
     return spriteAtlas;
   }
-
 
   Future<void> _loadAtlas() async {
     _spriteAtlas = await _getAtlas();
@@ -53,9 +52,9 @@ class _SpriteMarkerFrameLayerDemoState extends State<SpriteMarkerFrameLayerDemo>
     final london = LatLng(51.5074, -0.1278);
     final Random random = Random(42);
     //random rotation and scale for each marker
-      circles = [];
+    circles = [];
     setState(() {
-      markers = List<SpriteMarkerFrame>.generate(count, (index) {
+      markers = List<SpriteFrameMarker>.generate(count, (index) {
         //rotation in radians
 
         final position = Utility.clusterPoint(
@@ -72,10 +71,10 @@ class _SpriteMarkerFrameLayerDemoState extends State<SpriteMarkerFrameLayerDemo>
             radius: 48,
           ),
         );
-        return SpriteMarkerFrame(
+        return SpriteFrameMarker(
           id: 'marker_$index',
           scale: 1.0,
-          rotate: true,
+          counterRotate: true,
           anchor: Alignment.bottomCenter,
           position: position,
           spriteIndex: 0,
@@ -83,7 +82,6 @@ class _SpriteMarkerFrameLayerDemoState extends State<SpriteMarkerFrameLayerDemo>
       });
       markerCount = count;
     });
-   
   }
 
   @override
@@ -91,7 +89,7 @@ class _SpriteMarkerFrameLayerDemoState extends State<SpriteMarkerFrameLayerDemo>
     return Scaffold(
       appBar: AppBar(title: const Text('Static Sprite Marker Layer')),
       drawer: const AppDrawer(),
-      body: _spriteAtlas == null 
+      body: _spriteAtlas == null
           ? const Center(child: CircularProgressIndicator())
           : Stack(
               children: [
@@ -108,8 +106,11 @@ class _SpriteMarkerFrameLayerDemoState extends State<SpriteMarkerFrameLayerDemo>
                       urlTemplate:
                           'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                     ),
-                    SpriteMarkerLayer(markers: markers, spriteAtlas: _spriteAtlas!,),
-                   // CircleLayer(circles: circles)
+                    SpriteMarkerLayer(
+                      markers: markers,
+                      spriteAtlas: _spriteAtlas!,
+                    ),
+                    // CircleLayer(circles: circles)
                   ],
                 ),
                 Positioned(

@@ -1,30 +1,22 @@
-
 part of '../../marker_core.dart';
-class SpriteMarkerSequence extends SpriteMarker {
+
+class SpriteSequenceMarker extends SpriteMarker {
   int sequenceIndex;
   List<Sequence> sequences;
-
-
 
   /// Whether this marker should advance frames over time.
   bool animating;
   Duration _accumulated = Duration.zero;
 
-  bool isVisible;
-  SpriteMarkerSequence({
+  SpriteSequenceMarker({
     required super.id,
     required super.position,
     this.sequenceIndex = 0,
     required this.sequences,
-    super.scale = 1.0,
-    super.rotation = 0.0,
-    super.rotate = false,
-    super.alpha = 255,
-    super.color = Colors.transparent,
     super.onTap,
-    super.anchor = Alignment.center,
     this.animating = true,
-    this.isVisible = true
+    super.isVisible = true,
+    super.transform = Offset.zero,
   });
 
   void play() {
@@ -49,9 +41,25 @@ class SpriteMarkerSequence extends SpriteMarker {
 
   @override
   int get spriteIndex {
-    
     int frameIndex = sequences[sequenceIndex].frameIndex;
     final spriteIdx = sequences[sequenceIndex].frames[frameIndex];
     return spriteIdx;
-  } 
+  }
+  
+  /// Returns the anchor alignment for the current sequence.
+  @override
+  Alignment get anchor => sequences[sequenceIndex].anchor;
+  
+  @override
+  bool get counterRotate => sequences[sequenceIndex].counterRotate;
+
+  @override
+  double get scale => sequences[sequenceIndex].scale;
+
+  @override
+  double get rotation => sequences[sequenceIndex].rotation;
+
+  @override
+  bool get spriteSizeInMeters => sequences[sequenceIndex].spriteSizeInMeters;
+
 }

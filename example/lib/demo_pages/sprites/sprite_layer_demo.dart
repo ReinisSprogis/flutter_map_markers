@@ -4,9 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/flutter_map_markers.dart';
-import 'package:flutter_map_markers/sprite_marker_layer/model/animation_mode.dart';
 import 'package:flutter_map_markers_example/app_drawer.dart';
-import 'package:flutter_map_markers_example/demo_pages/sprites/gemstone.dart';
 import 'package:flutter_map_markers_example/demo_pages/sprites/puffy_gems.dart';
 import 'package:flutter_map_markers_example/utility/utility.dart';
 import 'package:latlong2/latlong.dart';
@@ -23,13 +21,19 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
     with SingleTickerProviderStateMixin {
   SpriteAtlas? _spriteAtlas;
   late final AnimationPlayer _animationPlayer;
-  List<SpriteMarkerSequence> markers = [];
+  List<SpriteSequenceMarker> markers = [];
   int markerCount = 1000;
-  int lastTime = 0;
+  List<Marker> flutterMarkers = [];
+  bool showFlutterMarkers = false;
+
   @override
   void initState() {
     super.initState();
-    _animationPlayer = AnimationPlayer(vsync: this);
+
+    _animationPlayer = AnimationPlayer(vsync: this)
+      ..onPlayerStop = () {
+        print('Animation Player Stopped');
+      };
 
     Future.microtask(() async {
       await _loadAtlas();
@@ -55,67 +59,72 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
 
   Future<void> _loadAtlas() async {
     _spriteAtlas = await _getAtlas();
-    _animationPlayer.markers = markers;
     _generateSprites(1);
+    _animationPlayer.markers = markers;
   }
 
   void _generateSprites(int count) {
     final london = LatLng(51.5074, -0.1278);
     final Random random = Random(42);
     //random rotation and scale for each marker
-
+    flutterMarkers = [];
     setState(() {
-      markers = List<SpriteMarkerSequence>.generate(count, (index) {
-        //rotation in radians
-
+      markers = List<SpriteSequenceMarker>.generate(count, (index) {
         final position = Utility.clusterPoint(
           london,
           random,
           maxDistance: 10.0,
         );
+        if (showFlutterMarkers) {
+          flutterMarkers.add(
+            Marker(
+              point: position,
+              width: 24,
+              height: 24,
+              child: FlutterLogo(),
+            ),
+          );
+        }
         final String id = Uuid().v4();
-        return SpriteMarkerSequence(
+        int elapsed = 0;
+        return SpriteSequenceMarker(
           id: id,
-          scale: 1.0,
-          rotate: true,
-          anchor: Alignment.bottomCenter,
           position: position,
           sequenceIndex: 1,
           animating: true,
           onTap: () {
             final marker = markers[index];
-            if(marker.sequenceIndex != 0){
-               markers[index].sequenceIndex = 0;
-            markers[index].resetAnimation(animate: true);
-            setState(() {});
+            if (marker.sequenceIndex != 0) {
+              markers[index].sequenceIndex = 0;
+              markers[index].resetAnimation(animate: true);
+              _animationPlayer.start();
+              setState(() {});
             }
-           
           },
           sequences: [
             Sequence(
+              counterRotate: true,
               mode: AnimationMode.forwardOnce,
               fps: 30,
-              frames: [
-                0,
-                1,
-                2,
-                3,
-                4,
-                5,
-                6,
-                7,
-                8,
-                9,
-              ],
+              frames: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
               onAnimationEnd: () {
                 markers[index].isVisible = false;
                 setState(() {});
               },
             ),
             Sequence(
-              mode: AnimationMode.loopForward,
-              fps: 24,
-              frameIndex: random.nextInt(24),
+              scale: 0.5,
+              counterRotate: true,
+              mode: AnimationMode.forwardOnce,
+              fps: 25,
+              frameIndex: random.nextInt(5),
+              transform: Offset(0, -50),
+              onSequenceFrame: (frame) {
+                final marker = markers[index];
+                final t = frame / 34;
+                final y = Curves.bounceOut.transform(t) * 50;
+                marker.transform = Offset(0, y);
+              },
               frames: [
                 11,
                 12,
@@ -176,11 +185,14 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
                       urlTemplate:
                           'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                     ),
-                    SpriteMarkerLayer(
-                      spriteAtlas: _spriteAtlas!,
-                      markers: markers,
-                      animationPlayer: _animationPlayer,
-                    ),
+                    if (showFlutterMarkers)
+                      MarkerLayer(markers: flutterMarkers),
+                    if (!showFlutterMarkers)
+                      SpriteMarkerLayer(
+                        spriteAtlas: _spriteAtlas!,
+                        markers: markers,
+                        animationPlayer: _animationPlayer,
+                      ),
                   ],
                 ),
                 Positioned(
@@ -229,11 +241,13 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
                                   },
                                   child: const Text('50000'),
                                 ),
-                                TextButton(
-                                  onPressed: () {
-                                    _generateSprites(100000);
+                                Switch(
+                                  value: showFlutterMarkers,
+                                  onChanged: (v) {
+                                    showFlutterMarkers = !showFlutterMarkers;
+                                    _generateSprites(markerCount);
+                                    setState(() {});
                                   },
-                                  child: const Text('100000'),
                                 ),
                               ],
                             ),
@@ -250,7 +264,7 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
                           child: Slider(
                             label: 'Marker Count: $markerCount',
                             min: 1,
-                            max: 200000,
+                            max: 50000,
                             value: markerCount.toDouble(),
                             onChanged: (v) {
                               markerCount = v.toInt();
@@ -278,6 +292,7 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
           } else {
             _animationPlayer.start();
           }
+          setState(() {});
         },
         child: Icon(
           _animationPlayer.isRunning ? Icons.pause : Icons.play_arrow,
