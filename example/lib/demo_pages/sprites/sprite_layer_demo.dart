@@ -105,7 +105,7 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
             Sequence(
               counterRotate: true,
               mode: AnimationMode.forwardOnce,
-              fps: 30,
+              fps: 10,
               frames: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
               onAnimationEnd: () {
                 markers[index].isVisible = false;
@@ -115,16 +115,11 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
             Sequence(
               scale: 0.5,
               counterRotate: true,
-              mode: AnimationMode.forwardOnce,
+              mode: AnimationMode.loopForward,
               fps: 25,
               frameIndex: random.nextInt(5),
-              transform: Offset(0, -50),
-              onSequenceFrame: (frame) {
-                final marker = markers[index];
-                final t = frame / 34;
-                final y = Curves.bounceOut.transform(t) * 50;
-                marker.transform = Offset(0, y);
-              },
+              transform: Offset(0, 0),
+             
               frames: [
                 11,
                 12,
