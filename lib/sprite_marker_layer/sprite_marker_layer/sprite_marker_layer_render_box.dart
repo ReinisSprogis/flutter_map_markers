@@ -8,6 +8,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/marker_core.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/markers/sprite_marker.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas_set.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_info.dart';
 import 'package:latlong2/latlong.dart';
 
 /// Cached projection parameters to avoid expensive per-marker calculations.
@@ -136,7 +138,7 @@ class _WorldWrapInfo {
 /// A render object that draws [SpriteMarker]s using sprite atlas rendering
 /// for optimal performance when displaying many markers.
 class RenderSpriteMarkerLayer extends RenderBox {
-  SpriteAtlas _spriteAtlas;
+  SpriteAtlasSet atlasSets;
   List<SpriteMarker> _markers;
   MapCamera _camera;
   bool _cullMarkers;
@@ -167,14 +169,13 @@ class RenderSpriteMarkerLayer extends RenderBox {
   static const int _alphaHitThreshold = 10;
 
   RenderSpriteMarkerLayer({
-    required SpriteAtlas spriteAtlas,
+    required this.atlasSets,
     required List<SpriteMarker> markers,
     required MapCamera camera,
     bool cullMarkers = true,
     bool spriteSizeInMeters = false,
     AnimationPlayer? animationPlayer,
-  }) : _spriteAtlas = spriteAtlas,
-       _markers = markers,
+  }) : _markers = markers,
        _camera = camera,
        _cullMarkers = cullMarkers,
        _animationPlayer = animationPlayer {
@@ -184,7 +185,7 @@ class RenderSpriteMarkerLayer extends RenderBox {
 
   /// Loads pixel data from the sprite atlas for transparency hit testing.
   Future<void> _loadAtlasPixelData() async {
-    final image = _spriteAtlas.image;
+    final image = atlasSets.atlases[0].image;
     _atlasPixelWidth = image.width;
     _atlasPixelHeight = image.height;
     _atlasPixelData = await image.toByteData(
@@ -228,15 +229,15 @@ class RenderSpriteMarkerLayer extends RenderBox {
     _isListening = false;
   }
 
-  SpriteAtlas get spriteAtlas => _spriteAtlas;
-  set spriteAtlas(SpriteAtlas value) {
-    if (_spriteAtlas != value) {
-      _spriteAtlas = value;
-      _atlasPixelData = null; // Invalidate cached pixel data
-      _loadAtlasPixelData();
-      markNeedsPaint();
-    }
-  }
+  // SpriteAtlas get spriteAtlas => _spriteAtlas;
+  // set spriteAtlas(SpriteAtlas value) {
+  //   if (_spriteAtlas != value) {
+  //     _spriteAtlas = value;
+  //     _atlasPixelData = null; // Invalidate cached pixel data
+  //     _loadAtlasPixelData();
+  //     markNeedsPaint();
+  //   }
+  // }
 
   List<SpriteMarker> get markers => _markers;
   set markers(List<SpriteMarker> value) {
@@ -340,7 +341,7 @@ class RenderSpriteMarkerLayer extends RenderBox {
     final Float32List rects = rectList!;
 
     int writeIndex = 0;
-
+    final atlas = atlasSets.atlases[0];
     // First pass: compute per-marker data that doesn't depend on world offset
     // This avoids recalculating for each world copy
     for (int i = 0; i < markerCount; i++) {
@@ -349,7 +350,9 @@ class RenderSpriteMarkerLayer extends RenderBox {
 
       // Cache polymorphic accesses
       final int spriteIndex = marker.spriteIndex;
-      final SpriteInfo spriteInfo = _spriteAtlas.getSpriteInfo(spriteIndex);
+      final SpriteInfo spriteInfo = atlas.getSpriteInfo(
+        spriteIndex,
+      );
 
       // Early continue for invalid sprites
       final double spriteWidth = spriteInfo.width;
@@ -444,7 +447,7 @@ class RenderSpriteMarkerLayer extends RenderBox {
           : (writeIndex - start);
 
       canvas.drawRawAtlas(
-        _spriteAtlas.image,
+        atlas.image,
         Float32List.sublistView(transforms, start * 4, (start + count) * 4),
         Float32List.sublistView(rects, start * 4, (start + count) * 4),
         null,
@@ -531,7 +534,7 @@ class RenderSpriteMarkerLayer extends RenderBox {
       final Offset screenOffset = projCache.latLngToOffset(marker.position);
 
       // Get sprite info for hit testing
-      final SpriteInfo spriteInfo = _spriteAtlas.getSpriteInfo(
+      final SpriteInfo spriteInfo = atlasSets.atlases[0].getSpriteInfo(
         marker.spriteIndex,
       );
       final double spriteWidth = spriteInfo.width;
