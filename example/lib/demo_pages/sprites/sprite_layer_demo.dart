@@ -65,15 +65,15 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
 
   void _generateSprites(int count) {
     final london = LatLng(51.5074, -0.1278);
-    final Random random = Random(42);
+    final Random randomgen = Random(42);
     //random rotation and scale for each marker
     flutterMarkers = [];
     setState(() {
       markers = List<SpriteSequenceMarker>.generate(count, (index) {
         final position = Utility.clusterPoint(
           london,
-          random,
-          maxDistance: 10.0,
+          randomgen,
+          maxDistance: 0.05,
         );
         if (showFlutterMarkers) {
           flutterMarkers.add(
@@ -87,6 +87,7 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
         }
         final String id = Uuid().v4();
         int elapsed = 0;
+        final Random random = Random();
         return SpriteSequenceMarker(
           id: id,
           position: position,
@@ -105,11 +106,11 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
             Sequence(
               counterRotate: true,
               mode: AnimationMode.forwardOnce,
-              fps: 10,
+              fps: 20,
               frames: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
               onAnimationEnd: () {
                 markers[index].isVisible = false;
-                setState(() {});
+              
               },
             ),
             Sequence(
@@ -117,9 +118,8 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
               counterRotate: true,
               mode: AnimationMode.loopForward,
               fps: 25,
-              frameIndex: random.nextInt(5),
+              frameIndex: random.nextInt(24),
               transform: Offset(0, 0),
-             
               frames: [
                 11,
                 12,
@@ -172,7 +172,7 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
                     initialCenter: LatLng(51.5074, -0.1278),
                     initialZoom: 5,
                     maxZoom: 18,
-                    minZoom: 1,
+                    minZoom: 0,
                   ),
                   children: [
                     TileLayer(
