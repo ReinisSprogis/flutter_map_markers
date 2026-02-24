@@ -4,7 +4,7 @@
 
 
 
-import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas.dart';
+import 'package:flutter_map_markers/flutter_map_markers.dart';
 
 class HeliFire {
   HeliFire._();
