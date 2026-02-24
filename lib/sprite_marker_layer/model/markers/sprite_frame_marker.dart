@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/markers/sprite_marker.dart';
 
 ///Displays single frame sprite from a sprite atlas at the given position on the map.
-class SpriteFrameMarker extends SpriteMarker {
+class SpriteFrameMarker extends SpriteMarker<SpriteFrameMarker> {
   /// Index of the sprite in the atlas (0-based).
   /// The sprite information (size, position) comes from the SpriteAtlas.
   @override
@@ -34,6 +34,7 @@ class SpriteFrameMarker extends SpriteMarker {
     super.isVisible = true,
     this.spriteSizeInMeters = false,
     super.transform = Offset.zero,
+    super.onUpdate,
   });
   
 }

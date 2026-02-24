@@ -30,8 +30,7 @@ class Sequence {
 ///For example if the sequence FPS is set to 1 this will be called once per second when frame updates.
  final void Function(int frameIndex)? onSequenceFrame;
 
-  /// Called on each update tick with the delta time in milliseconds.
-final void Function(int deltaTimeMs)? onUpdate;
+
 
   Sequence({
     required this.frames,
@@ -46,7 +45,6 @@ final void Function(int deltaTimeMs)? onUpdate;
     this.rotation = 0.0,
     this.spriteSizeInMeters = false,
     this.onSequenceFrame,
-    this.onUpdate,
     this.transform = Offset.zero,
   });
 }

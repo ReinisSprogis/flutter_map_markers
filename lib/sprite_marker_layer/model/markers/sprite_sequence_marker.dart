@@ -1,6 +1,6 @@
 part of '../../marker_core.dart';
 
-class SpriteSequenceMarker extends SpriteMarker {
+class SpriteSequenceMarker extends SpriteMarker<SpriteSequenceMarker> {
   int sequenceIndex;
   List<Sequence> sequences;
 
@@ -17,6 +17,7 @@ class SpriteSequenceMarker extends SpriteMarker {
     this.animating = true,
     super.isVisible = true,
     super.transform = Offset.zero,
+    super.onUpdate,
   });
 
   void play() {

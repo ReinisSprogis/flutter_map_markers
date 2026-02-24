@@ -3,7 +3,7 @@ import 'package:latlong2/latlong.dart' as coord;
 
 /// SpriteMarker represents a marker that renders a sprite from a sprite atlas
 /// at a specific geographic position.
- abstract class SpriteMarker {
+ abstract class SpriteMarker<T extends SpriteMarker<T>> {
 
   /// Unique identifier for the marker.
   final String id;
@@ -23,6 +23,7 @@ import 'package:latlong2/latlong.dart' as coord;
     this.onTap,
     required this.isVisible,
     this.transform = Offset.zero,
+    this.onUpdate,
   });
 
     /// Index of the sprite in the atlas (0-based).
@@ -45,4 +46,7 @@ import 'package:latlong2/latlong.dart' as coord;
 
   /// An offset to apply to the sprite's screen position.
   Offset transform;
+
+  /// Called on each update tick with the delta time in milliseconds.
+    final void Function(T marker, int deltaTimeMs)? onUpdate;
 }
