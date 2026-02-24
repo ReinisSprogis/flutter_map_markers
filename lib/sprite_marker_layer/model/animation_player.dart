@@ -5,7 +5,10 @@ class AnimationPlayer extends ChangeNotifier {
   late final _SpriteTicker _ticker;
   final Random _random = Random();
   VoidCallback onPlayerStop = () {};
-  AnimationPlayer({required TickerProvider vsync}) {
+  /// If true, player will automatically stop when no markers are animating. 
+  /// Set to false to keep it running and manually call start/stop as needed.
+  bool autoStop;
+  AnimationPlayer({required TickerProvider vsync, this.autoStop = true}) {
     _ticker = _SpriteTicker(vsync, _onTick);
   }
 
@@ -26,7 +29,11 @@ class AnimationPlayer extends ChangeNotifier {
     markers.remove(marker);
   }
 
-  void start() => _ticker.start();
+  void start() {
+      if (!_ticker.isActive){
+        _ticker.start();
+      }
+     }
   void stop() {
     _ticker.stop();
     onPlayerStop();
@@ -50,7 +57,7 @@ class AnimationPlayer extends ChangeNotifier {
     }
 
     if (anyFrameChanged) notifyListeners();
-    if (!anyAnimating) _ticker.stop();
+    if (!anyAnimating && autoStop) _ticker.stop();
   }
 
   (bool frameChanged, bool stillAnimating) _updateFrame(
@@ -139,8 +146,8 @@ class AnimationPlayer extends ChangeNotifier {
       if (!marker.animating) break;
     }
 
-    if (sequence.onUpdate != null && marker.animating) {
-      sequence.onUpdate!(clampedDelta.inMilliseconds);
+    if (marker.onUpdate != null && marker.animating) {
+      marker.onUpdate!(marker, clampedDelta.inMilliseconds);
       frameChanged = true;
     }
 
