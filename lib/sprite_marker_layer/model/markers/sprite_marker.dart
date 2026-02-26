@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_ref.dart';
 import 'package:latlong2/latlong.dart' as coord;
 
 /// SpriteMarker represents a marker that renders a sprite from a sprite atlas
@@ -49,4 +50,6 @@ import 'package:latlong2/latlong.dart' as coord;
 
   /// Called on each update tick with the delta time in milliseconds.
     final void Function(T marker, int deltaTimeMs)? onUpdate;
+
+  SpriteRef get currentSpriteRef;
 }

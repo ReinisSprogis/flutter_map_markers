@@ -10,6 +10,7 @@ import 'package:flutter_map_markers/sprite_marker_layer/model/markers/sprite_mar
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas_set.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_info.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_ref.dart';
 import 'package:latlong2/latlong.dart';
 
 /// Cached projection parameters to avoid expensive per-marker calculations.
@@ -159,6 +160,7 @@ class RenderSpriteMarkerLayer extends RenderBox {
   // Preallocate maximum possible size
   Float32List? rectList;
   Float32List? transformList;
+  Int32List? atlasIndexList;
 
   /// Cached pixel data for transparency hit testing.
   ByteData? _atlasPixelData;
@@ -324,39 +326,49 @@ class RenderSpriteMarkerLayer extends RenderBox {
       worldWidthPixels: projCache.worldWidthPixels,
       originX: projCache.originX,
     );
-
     final int worldCount = worldWrapInfo.worldOffsets.length;
 
-    // Ensure buffers are large enough for all markers × all worlds
-    final int maxRequired = markerCount * worldCount * 4;
-    if (rectList == null || rectList!.length < maxRequired) {
-      rectList = Float32List(maxRequired);
+    // Max number of sprite instances this frame (markers × worlds)
+    final int maxSprites = markerCount * worldCount;
+
+    // Ensure buffers are large enough
+    final int maxRequiredFloats = maxSprites * 4;
+    if (rectList == null || rectList!.length < maxRequiredFloats) {
+      rectList = Float32List(maxRequiredFloats);
     }
-    if (transformList == null || transformList!.length < maxRequired) {
-      transformList = Float32List(maxRequired);
+    if (transformList == null || transformList!.length < maxRequiredFloats) {
+      transformList = Float32List(maxRequiredFloats);
+    }
+    if (atlasIndexList == null || atlasIndexList!.length < maxSprites) {
+      atlasIndexList = Int32List(maxSprites);
     }
 
     // Direct buffer references to avoid repeated null checks
     final Float32List transforms = transformList!;
     final Float32List rects = rectList!;
+    final Int32List atlasIndices = atlasIndexList!;
 
     int writeIndex = 0;
-    final atlas = atlasSets.atlases[0];
-    // First pass: compute per-marker data that doesn't depend on world offset
-    // This avoids recalculating for each world copy
+
+    // Build the ordered draw list (preserve order!), while recording atlas index per sprite.
     for (int i = 0; i < markerCount; i++) {
       final SpriteMarker marker = visibleMarkers[i];
       if (!marker.isVisible) continue;
 
-      // Cache polymorphic accesses
-      final int spriteIndex = marker.spriteIndex;
-      final SpriteInfo spriteInfo = atlas.getSpriteInfo(
-        spriteIndex,
-      );
+      // Multi-atlas: marker must provide a SpriteRef for the CURRENT frame.
+      // For non-animated markers, it's just a constant SpriteRef.
+      // For animated markers, it should already be resolved before rendering.
+      final SpriteRef ref = marker.currentSpriteRef;
+      if (ref.isEmpty) continue; // Empty frame, skip rendering but preserve marker order for correct layering
+      // Bounds check (avoid crashes on bad data)
+      if (ref.atlas < 0 || ref.atlas >= atlasSets.atlases.length) continue;
+      final SpriteAtlas atlas = atlasSets.atlases[ref.atlas];
+      if (ref.sprite < 0 || ref.sprite >= atlas.sprites.length) continue;
 
-      // Early continue for invalid sprites
-      final double spriteWidth = spriteInfo.width;
-      final double spriteHeight = spriteInfo.height;
+      final SpriteInfo spriteInfo = atlas.getSpriteInfo(ref.sprite);
+
+      final int spriteWidth = spriteInfo.width;
+      final int spriteHeight = spriteInfo.height;
       if (spriteWidth <= 0 || spriteHeight <= 0) continue;
 
       final double markerScale = marker.scale;
@@ -368,7 +380,7 @@ class RenderSpriteMarkerLayer extends RenderBox {
 
       if (scale <= 0) continue;
 
-      // Convert world → screen using cached projection (much faster than getOffsetFromOrigin)
+      // Convert world → screen using cached projection
       final Offset screenOffset = projCache.latLngToOffset(marker.position);
 
       double totalRotation = marker.rotation;
@@ -378,10 +390,17 @@ class RenderSpriteMarkerLayer extends RenderBox {
 
       // Convert Alignment (-1..1) → anchor in pixels
       final Alignment anchor = marker.anchor;
-      final double anchorX = spriteWidth * (anchor.x + 1.0) * 0.5;
-      final double anchorY = spriteHeight * (anchor.y + 1.0) * 0.5;
 
-      // Base position without world offset
+      final double sourceW = spriteInfo.sourceWidth.toDouble();
+      final double sourceH = spriteInfo.sourceHeight.toDouble();
+
+      final double anchorSourceX = sourceW * (anchor.x + 1.0) * 0.5;
+      final double anchorSourceY = sourceH * (anchor.y + 1.0) * 0.5;
+
+      final double anchorX = anchorSourceX - spriteInfo.offsetX.toDouble();
+      final double anchorY = anchorSourceY - spriteInfo.offsetY.toDouble();
+
+      // Base position without world offset (anchor point in world/screen space)
       final double baseDx = screenOffset.dx + offset.dx + marker.transform.dx;
       final double baseDy = screenOffset.dy + offset.dy + marker.transform.dy;
 
@@ -398,20 +417,19 @@ class RenderSpriteMarkerLayer extends RenderBox {
       final double anchorOffsetY = -anchorX * ssin - anchorY * scos;
 
       // Sprite rect is the same for all world copies
-      final double rectX = spriteInfo.x;
-      final double rectY = spriteInfo.y;
-      final double rectX2 = spriteInfo.x + spriteWidth;
-      final double rectY2 = spriteInfo.y + spriteHeight;
+      final int rectX = spriteInfo.x;
+      final int rectY = spriteInfo.y;
+      final int rectX2 = spriteInfo.x + spriteWidth;
+      final int rectY2 = spriteInfo.y + spriteHeight;
 
       // Draw marker on each visible world copy
       for (int w = 0; w < worldCount; w++) {
         final double worldOffset = worldWrapInfo.worldOffsets[w];
-        // Add worldOffset to shift marker to the correct world copy
+
         final double dx = baseDx + worldOffset;
         final double dy = baseDy;
 
-        // Quick viewport culling: skip if marker center is way outside viewport
-        // (with generous margin for large markers)
+        // Quick viewport culling (generous margin)
         final double maxMarkerDimension =
             math.max(spriteWidth, spriteHeight) * scale;
         if (dx < -maxMarkerDimension ||
@@ -421,6 +439,9 @@ class RenderSpriteMarkerLayer extends RenderBox {
           continue;
         }
 
+        // Ensure we never write past allocated buffers (defensive)
+        if (writeIndex >= maxSprites) break;
+
         final int t = writeIndex * 4;
 
         transforms[t] = scos;
@@ -428,10 +449,13 @@ class RenderSpriteMarkerLayer extends RenderBox {
         transforms[t + 2] = dx + anchorOffsetX;
         transforms[t + 3] = dy + anchorOffsetY;
 
-        rects[t] = rectX;
-        rects[t + 1] = rectY;
-        rects[t + 2] = rectX2;
-        rects[t + 3] = rectY2;
+        rects[t] = rectX.toDouble();
+        rects[t + 1] = rectY.toDouble();
+        rects[t + 2] = rectX2.toDouble();
+        rects[t + 3] = rectY2.toDouble();
+
+        // Record atlas per sprite instance (preserves order for correct layering)
+        atlasIndices[writeIndex] = ref.atlas;
 
         writeIndex++;
       }
@@ -441,20 +465,45 @@ class RenderSpriteMarkerLayer extends RenderBox {
 
     const int kAtlasBatchSize = 256; // skwasm-safe
 
-    for (int start = 0; start < writeIndex; start += kAtlasBatchSize) {
-      final int count = (start + kAtlasBatchSize <= writeIndex)
-          ? kAtlasBatchSize
-          : (writeIndex - start);
+    // Second pass: flush in-order, batching only contiguous runs of the same atlas
+    int start = 0;
+    while (start < writeIndex) {
+      final int atlasIndex = atlasIndices[start];
+      final ui.Image image = atlasSets.atlases[atlasIndex].image;
 
-      canvas.drawRawAtlas(
-        atlas.image,
-        Float32List.sublistView(transforms, start * 4, (start + count) * 4),
-        Float32List.sublistView(rects, start * 4, (start + count) * 4),
-        null,
-        null,
-        cameraRect,
-        spritePaint,
-      );
+      // Find end of this contiguous atlas run
+      int runEnd = start + 1;
+      while (runEnd < writeIndex && atlasIndices[runEnd] == atlasIndex) {
+        runEnd++;
+      }
+
+      // Flush this run in chunks (<= kAtlasBatchSize)
+      int chunkStart = start;
+      while (chunkStart < runEnd) {
+        final int count = math.min(kAtlasBatchSize, runEnd - chunkStart);
+
+        canvas.drawRawAtlas(
+          image,
+          Float32List.sublistView(
+            transforms,
+            chunkStart * 4,
+            (chunkStart + count) * 4,
+          ),
+          Float32List.sublistView(
+            rects,
+            chunkStart * 4,
+            (chunkStart + count) * 4,
+          ),
+          null,
+          null,
+          cameraRect,
+          spritePaint,
+        );
+
+        chunkStart += count;
+      }
+
+      start = runEnd;
     }
   }
 
@@ -537,8 +586,8 @@ class RenderSpriteMarkerLayer extends RenderBox {
       final SpriteInfo spriteInfo = atlasSets.atlases[0].getSpriteInfo(
         marker.spriteIndex,
       );
-      final double spriteWidth = spriteInfo.width;
-      final double spriteHeight = spriteInfo.height;
+      final int spriteWidth = spriteInfo.width;
+      final int spriteHeight = spriteInfo.height;
 
       if (spriteWidth <= 0 || spriteHeight <= 0) continue;
 

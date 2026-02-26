@@ -3,10 +3,11 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/marker_core.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/markers/sprite_marker.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas_set.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/sprite_marker_layer/sprite_marker_layer_render_box.dart';
 
 class SpriteMarkerRenderLayer extends LeafRenderObjectWidget {
-  final SpriteAtlas spriteAtlas;
+  final SpriteAtlasSet atlases;
   final List<SpriteMarker> markers;
   final MapCamera camera;
   final bool cullMarkers;
@@ -14,7 +15,7 @@ class SpriteMarkerRenderLayer extends LeafRenderObjectWidget {
   final AnimationPlayer? animationPlayer;
   const SpriteMarkerRenderLayer({
     super.key,
-    required this.spriteAtlas,
+    required this.atlases,
     required this.markers,
     required this.camera,
     this.cullMarkers = true,
@@ -25,7 +26,7 @@ class SpriteMarkerRenderLayer extends LeafRenderObjectWidget {
   @override
   RenderObject createRenderObject(BuildContext context) {
     return RenderSpriteMarkerLayer(
-      spriteAtlas: spriteAtlas,
+      atlasSets: atlases,
       markers: markers,
       camera: camera,
       cullMarkers: cullMarkers,
@@ -40,10 +41,10 @@ class SpriteMarkerRenderLayer extends LeafRenderObjectWidget {
     covariant RenderSpriteMarkerLayer renderObject,
   ) {
     renderObject
-      ..spriteAtlas = spriteAtlas
+      ..atlasSets = atlases
       ..markers = markers
       ..camera = camera
       ..cullMarkers = cullMarkers
-      ..animationPlayer = animationPlayer;  
+      ..animationPlayer = animationPlayer;
   }
 }

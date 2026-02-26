@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/markers/sprite_marker.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_ref.dart';
 
 ///Displays single frame sprite from a sprite atlas at the given position on the map.
 class SpriteFrameMarker extends SpriteMarker<SpriteFrameMarker> {
@@ -19,13 +20,13 @@ class SpriteFrameMarker extends SpriteMarker<SpriteFrameMarker> {
 
   @override
   bool spriteSizeInMeters;
-
   @override
-  int spriteIndex;
+  SpriteRef currentSpriteRef;
+  
   SpriteFrameMarker({
     required super.id,
     required super.position,
-    required this.spriteIndex,
+    required this.currentSpriteRef,
     this.scale = 1.0,
     this.rotation = 0.0,
     super.onTap,
@@ -36,5 +37,8 @@ class SpriteFrameMarker extends SpriteMarker<SpriteFrameMarker> {
     super.transform = Offset.zero,
     super.onUpdate,
   });
+
+  @override
+  int get spriteIndex => currentSpriteRef.sprite;
   
 }

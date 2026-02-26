@@ -3,13 +3,14 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/marker_core.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/markers/sprite_marker.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_atlas_set.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/sprite_marker_layer/sprite_marker_layer_leaf.dart';
 
 /// A layer that displays a list of [SpriteMarker]s on a FlutterMap using
 /// efficient sprite atlas rendering for optimal performance with many markers.
 class SpriteMarkerLayer extends StatelessWidget {
   /// The sprite atlas containing the image and sprite definitions.
-  final SpriteAtlas spriteAtlas;
+  final SpriteAtlasSet atlases;
 
   /// The list of sprite markers to display on the map.
   final List<SpriteMarker> markers;
@@ -30,7 +31,7 @@ class SpriteMarkerLayer extends StatelessWidget {
   final AnimationPlayer? animationPlayer;
   const SpriteMarkerLayer({
     super.key,
-    required this.spriteAtlas,
+    required this.atlases,
     required this.markers,
     this.cullMarkers = true,
     this.spriteSizeInMeters = false,
@@ -42,7 +43,7 @@ class SpriteMarkerLayer extends StatelessWidget {
     final MapCamera camera = MapCamera.of(context);
     return MobileLayerTransformer(
       child: SpriteMarkerRenderLayer(
-        spriteAtlas: spriteAtlas,
+        atlases: atlases,
         markers: markers,
         camera: camera,
         cullMarkers: cullMarkers,

@@ -43,8 +43,8 @@ class SpriteSequenceMarker extends SpriteMarker<SpriteSequenceMarker> {
   @override
   int get spriteIndex {
     int frameIndex = sequences[sequenceIndex].frameIndex;
-    final spriteIdx = sequences[sequenceIndex].frames[frameIndex];
-    return spriteIdx;
+    final spriteRef = sequences[sequenceIndex].frames[frameIndex];
+    return spriteRef.sprite;
   }
   
   /// Returns the anchor alignment for the current sequence.
@@ -63,4 +63,9 @@ class SpriteSequenceMarker extends SpriteMarker<SpriteSequenceMarker> {
   @override
   bool get spriteSizeInMeters => sequences[sequenceIndex].spriteSizeInMeters;
 
+  @override
+  SpriteRef get currentSpriteRef {
+    int frameIndex = sequences[sequenceIndex].frameIndex;
+    return sequences[sequenceIndex].frames[frameIndex];
+  }
 }
