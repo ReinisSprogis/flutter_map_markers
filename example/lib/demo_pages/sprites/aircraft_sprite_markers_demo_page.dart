@@ -8,8 +8,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/flutter_map_markers.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_ref.dart';
 import 'package:flutter_map_markers_example/app_drawer.dart';
-import 'package:flutter_map_markers_example/demo_pages/heli_2.dart';
+import 'package:flutter_map_markers_example/demo_pages/sprites/heli_2.dart';
 import 'package:flutter_map_markers_example/utility/utility.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
@@ -26,7 +27,7 @@ class _AircraftSpriteMarkerDemoPageState
     extends State<AircraftSpriteMarkerDemoPage>
     with SingleTickerProviderStateMixin {
   late final AnimationController _animationController;
-  SpriteAtlas? _spriteAtlas;
+  SpriteAtlasSet? _spriteAtlasSet;
   List<SpriteFrameMarker> _markers = [];
   final Map<String, double> _velocityByMarkerId = <String, double>{};
   final Map<String, double> _scaleByMarkerId = <String, double>{};
@@ -140,7 +141,7 @@ class _AircraftSpriteMarkerDemoPageState
             scale: scale,
             rotation: rotation,
             position: position,
-            spriteIndex: markers.length % 2,
+            currentSpriteRef: SpriteRef(0, markers.length % 2),
           ),
         );
       }
@@ -221,7 +222,7 @@ class _AircraftSpriteMarkerDemoPageState
       _markers[i] = SpriteFrameMarker(
         id: marker.id,
         position: LatLng(newLat, newLng),
-        spriteIndex: frameIndex,
+        currentSpriteRef: SpriteRef(0, frameIndex),
         scale: marker.scale,
         rotation: newRotation,
         counterRotate: marker.counterRotate,
@@ -243,10 +244,14 @@ class _AircraftSpriteMarkerDemoPageState
     final ui.Codec codec = await ui.instantiateImageCodec(bytes);
     final ui.FrameInfo frameInfo = await codec.getNextFrame();
     setState(() {
-      _spriteAtlas = SpriteAtlas.custom(
+      _spriteAtlasSet = 
+      SpriteAtlasSet(
+        [SpriteAtlas.custom(
         image: frameInfo.image,
         sprites: Heli2.sprites,
-      );
+      )]
+      )
+      ;
       // Create a horizontal sprite atlas with 2 sprites of 64x64 each
       // _spriteAtlas = SpriteAtlas.horizontal(
       //   image: frameInfo.image,
@@ -279,7 +284,7 @@ class _AircraftSpriteMarkerDemoPageState
           counterRotate: true,
           rotation: rotation,
           position: position,
-          spriteIndex: index % 2,
+          currentSpriteRef: SpriteRef(0, index % 2),
         );
       });
       markerCount = count;
@@ -313,7 +318,7 @@ class _AircraftSpriteMarkerDemoPageState
           scale: scale,
           rotation: rotation,
           position: position,
-          spriteIndex: _markers.length % 2,
+          currentSpriteRef: SpriteRef(0, _markers.length % 2),
         ),
       );
       markerCount = _markers.length;
@@ -326,7 +331,7 @@ class _AircraftSpriteMarkerDemoPageState
     return Scaffold(
       appBar: AppBar(title: const Text('Sprite Markers Demo')),
       drawer: const AppDrawer(),
-      body: _spriteAtlas == null
+      body: _spriteAtlasSet == null
           ? const CircularProgressIndicator()
           : Stack(
               children: [
@@ -347,7 +352,7 @@ class _AircraftSpriteMarkerDemoPageState
                           'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                     ),
                     SpriteMarkerLayer(
-                      spriteAtlas: _spriteAtlas!,
+                      atlases: _spriteAtlasSet!,
                       markers: _markers,
                     ),
                   ],

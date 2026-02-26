@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map_markers_example/demo_pages/marker_demo_page.dart';
+import 'package:flutter_map_markers_example/demo_pages/canvas_marker_demos/marker_demo_page.dart';
 
 void main() {
   runApp(const MarkerDemoApp());

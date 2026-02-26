@@ -9,27 +9,27 @@ class GemRedAndWhite {
   GemRedAndWhite._();
 
   static const List<SpriteInfo> sprites = [
-    SpriteInfo(x: 2, y: 2, width: 23, height: 35), // ./f1
-    SpriteInfo(x: 27, y: 2, width: 23, height: 35), // ./f2
-    SpriteInfo(x: 52, y: 2, width: 23, height: 35), // ./f3
-    SpriteInfo(x: 77, y: 2, width: 23, height: 35), // ./f4
-    SpriteInfo(x: 102, y: 2, width: 23, height: 35), // ./f5
-    SpriteInfo(x: 127, y: 2, width: 23, height: 35), // ./f6
-    SpriteInfo(x: 152, y: 2, width: 23, height: 35), // ./f7
-    SpriteInfo(x: 177, y: 2, width: 23, height: 35), // ./f8
-    SpriteInfo(x: 202, y: 2, width: 23, height: 35), // ./f9
-    SpriteInfo(x: 2, y: 2, width: 23, height: 35), // ./f10
+    SpriteInfo(x: 2, y: 2, width: 23, height: 35,sourceWidth: 23, sourceHeight: 36,offsetX: 0, offsetY: 0), // ./f1
+    SpriteInfo(x: 27, y: 2, width: 23, height: 35,sourceWidth: 23, sourceHeight: 36,offsetX: 0, offsetY: 0), // ./f2
+    SpriteInfo(x: 52, y: 2, width: 23, height: 35,sourceWidth: 23, sourceHeight: 36,offsetX: 0, offsetY: 0), // ./f3
+    SpriteInfo(x: 77, y: 2, width: 23, height: 35,sourceWidth: 23, sourceHeight: 36,offsetX: 0, offsetY: 0), // ./f4
+    SpriteInfo(x: 102, y: 2, width: 23, height: 35,sourceWidth: 23, sourceHeight: 36,offsetX: 0, offsetY: 0), // ./f5
+    SpriteInfo(x: 127, y: 2, width: 23, height: 35,sourceWidth: 23, sourceHeight: 36,offsetX: 0, offsetY: 0), // ./f6
+    SpriteInfo(x: 152, y: 2, width: 23, height: 35,sourceWidth: 23, sourceHeight: 36,offsetX: 0, offsetY: 0), // ./f7
+    SpriteInfo(x: 177, y: 2, width: 23, height: 35,sourceWidth: 23, sourceHeight: 36,offsetX: 0, offsetY: 0), // ./f8
+    SpriteInfo(x: 202, y: 2, width: 23, height: 35,sourceWidth: 23, sourceHeight: 36,offsetX: 0, offsetY: 0), // ./f9
+    SpriteInfo(x: 2, y: 2, width: 23, height: 35,sourceWidth: 23, sourceHeight: 36,offsetX: 0, offsetY: 0), // ./f10
 
-    SpriteInfo(x: 227, y: 2, width: 23, height: 35), // ./f1_red
-    SpriteInfo(x: 252, y: 2, width: 23, height: 35), // ./f2_red
-    SpriteInfo(x: 277, y: 2, width: 23, height: 35), // ./f3_red
-    SpriteInfo(x: 302, y: 2, width: 23, height: 35), // ./f4_red
-    SpriteInfo(x: 327, y: 2, width: 23, height: 35), // ./f5_red
-    SpriteInfo(x: 352, y: 2, width: 23, height: 35), // ./f6_red
-    SpriteInfo(x: 377, y: 2, width: 23, height: 35), // ./f7_red
-    SpriteInfo(x: 402, y: 2, width: 23, height: 35), // ./f8_red
-    SpriteInfo(x: 427, y: 2, width: 23, height: 35), // ./f9_red
-    SpriteInfo(x: 227, y: 2, width: 23, height: 35), // ./f10_red
+    SpriteInfo(x: 227, y: 2, width: 23, height: 35,sourceWidth: 23, sourceHeight: 36,offsetX: 0, offsetY: 0), // ./f1_red
+    SpriteInfo(x: 252, y: 2, width: 23, height: 35,sourceWidth: 23, sourceHeight: 36,offsetX: 0, offsetY: 0), // ./f2_red
+    SpriteInfo(x: 277, y: 2, width: 23, height: 35,sourceWidth: 23, sourceHeight: 36,offsetX: 0, offsetY: 0), // ./f3_red
+    SpriteInfo(x: 302, y: 2, width: 23, height: 35,sourceWidth: 23, sourceHeight: 36,offsetX: 0, offsetY: 0), // ./f4_red
+    SpriteInfo(x: 327, y: 2, width: 23, height: 35,sourceWidth: 23, sourceHeight: 36,offsetX: 0, offsetY: 0), // ./f5_red
+    SpriteInfo(x: 352, y: 2, width: 23, height: 35,sourceWidth: 23, sourceHeight: 36,offsetX: 0, offsetY: 0), // ./f6_red
+    SpriteInfo(x: 377, y: 2, width: 23, height: 35,sourceWidth: 23, sourceHeight: 36,offsetX: 0, offsetY: 0), // ./f7_red
+    SpriteInfo(x: 402, y: 2, width: 23, height: 35,sourceWidth: 23, sourceHeight: 36,offsetX: 0, offsetY: 0), // ./f8_red
+    SpriteInfo(x: 427, y: 2, width: 23, height: 35,sourceWidth: 23, sourceHeight: 36,offsetX: 0, offsetY: 0), // ./f9_red
+    SpriteInfo(x: 227, y: 2, width: 23, height: 35,sourceWidth: 23, sourceHeight: 36,offsetX: 0, offsetY: 0), // ./f10_red
   ];
 
   static SpriteInfo get f1 => sprites[0];

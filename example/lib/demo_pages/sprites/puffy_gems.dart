@@ -8,42 +8,42 @@ class PuffyGems {
   PuffyGems._();
 
   static const List<SpriteInfo> sprites = [
-    SpriteInfo(x: 0, y: 0, width: 64, height: 64), // ./0
-    SpriteInfo(x: 66, y: 0, width: 64, height: 64), // ./1
-    SpriteInfo(x: 0, y: 66, width: 64, height: 64), // ./2
-    SpriteInfo(x: 66, y: 66, width: 64, height: 64), // ./3
+    SpriteInfo(x: 0, y: 0, width: 64, height: 64,sourceWidth: 64, sourceHeight: 64,offsetX: 0, offsetY: 0), // ./0
+    SpriteInfo(x: 66, y: 0, width: 64, height: 64,sourceWidth: 64, sourceHeight: 64,offsetX: 0, offsetY: 0), // ./1
+    SpriteInfo(x: 0, y: 66, width: 64, height: 64,sourceWidth: 64, sourceHeight: 64,offsetX: 0, offsetY: 0), // ./2
+    SpriteInfo(x: 66, y: 66, width: 64, height: 64,sourceWidth: 64, sourceHeight: 64,offsetX: 0, offsetY: 0), // ./3
    // SpriteInfo(x: 132, y: 0, width: 64, height: 64), // ./4
-    SpriteInfo(x: 0, y: 132, width: 64, height: 64), // ./5
-    SpriteInfo(x: 66, y: 132, width: 64, height: 64), // ./6
-    SpriteInfo(x: 132, y: 66, width: 64, height: 64), // ./7
-    SpriteInfo(x: 132, y: 132, width: 64, height: 64), // ./8
-    SpriteInfo(x: 198, y: 0, width: 64, height: 64), // ./9
-    SpriteInfo(x: 0, y: 198, width: 64, height: 64), // ./10
-    SpriteInfo(x: 66, y: 198, width: 48, height: 48), // ./gemstone0000
-    SpriteInfo(x: 198, y: 66, width: 48, height: 48), // ./gemstone0001
-    SpriteInfo(x: 116, y: 198, width: 48, height: 48), // ./gemstone0002
-    SpriteInfo(x: 198, y: 116, width: 48, height: 48), // ./gemstone0003
-    SpriteInfo(x: 248, y: 66, width: 48, height: 48), // ./gemstone0004
-    SpriteInfo(x: 66, y: 248, width: 48, height: 48), // ./gemstone0005
-    SpriteInfo(x: 166, y: 198, width: 48, height: 48), // ./gemstone0006
-    SpriteInfo(x: 264, y: 0, width: 48, height: 48), // ./gemstone0007
-    SpriteInfo(x: 0, y: 264, width: 48, height: 48), // ./gemstone0008
-    SpriteInfo(x: 116, y: 248, width: 48, height: 48), // ./gemstone0009
-    SpriteInfo(x: 248, y: 116, width: 48, height: 48), // ./gemstone0010
-    SpriteInfo(x: 216, y: 198, width: 48, height: 48), // ./gemstone0011
-    SpriteInfo(x: 166, y: 248, width: 48, height: 48), // ./gemstone0012
-    SpriteInfo(x: 298, y: 66, width: 48, height: 48), // ./gemstone0013
-    SpriteInfo(x: 66, y: 298, width: 48, height: 48), // ./gemstone0014
-    SpriteInfo(x: 314, y: 0, width: 48, height: 48), // ./gemstone0015
-    SpriteInfo(x: 116, y: 298, width: 48, height: 48), // ./gemstone0016
-    SpriteInfo(x: 298, y: 116, width: 48, height: 48), // ./gemstone0017
-    SpriteInfo(x: 216, y: 248, width: 48, height: 48), // ./gemstone0018
-    SpriteInfo(x: 266, y: 198, width: 48, height: 48), // ./gemstone0019
-    SpriteInfo(x: 166, y: 298, width: 48, height: 48), // ./gemstone0020
-    SpriteInfo(x: 266, y: 248, width: 48, height: 48), // ./gemstone0021
-    SpriteInfo(x: 216, y: 298, width: 48, height: 48), // ./gemstone0022
-    SpriteInfo(x: 316, y: 198, width: 48, height: 48), // ./gemstone0023
-    SpriteInfo(x: 266, y: 298, width: 48, height: 48), // ./gemstone0024
+    SpriteInfo(x: 0, y: 132, width: 64, height: 64,sourceWidth: 64, sourceHeight: 64,offsetX: 0, offsetY: 0), // ./5
+    SpriteInfo(x: 66, y: 132, width: 64, height: 64,sourceWidth: 64, sourceHeight: 64,offsetX: 0, offsetY: 0), // ./6
+    SpriteInfo(x: 132, y: 66, width: 64, height: 64,sourceWidth: 64, sourceHeight: 64,offsetX: 0, offsetY: 0), // ./7
+    SpriteInfo(x: 132, y: 132, width: 64, height: 64,sourceWidth: 64, sourceHeight: 64,offsetX: 0, offsetY: 0), // ./8
+    SpriteInfo(x: 198, y: 0, width: 64, height: 64,sourceWidth: 64, sourceHeight: 64,offsetX: 0, offsetY: 0), // ./9
+    SpriteInfo(x: 0, y: 198, width: 64, height: 64,sourceWidth: 64, sourceHeight: 64,offsetX: 0, offsetY: 0), // ./10
+    SpriteInfo(x: 66, y: 198, width: 48, height: 48,sourceWidth: 48, sourceHeight: 48,offsetX: 0, offsetY: 0), // ./gemstone0000
+    SpriteInfo(x: 198, y: 66, width: 48, height: 48,sourceWidth: 48, sourceHeight: 48,offsetX: 0, offsetY: 0), // ./gemstone0001
+    SpriteInfo(x: 116, y: 198, width: 48, height: 48,sourceWidth: 48, sourceHeight: 48,offsetX: 0, offsetY: 0), // ./gemstone0002
+    SpriteInfo(x: 198, y: 116, width: 48, height: 48,sourceWidth: 48, sourceHeight: 48,offsetX: 0, offsetY: 0), // ./gemstone0003
+    SpriteInfo(x: 248, y: 66, width: 48, height: 48,sourceWidth: 48, sourceHeight: 48,offsetX: 0, offsetY: 0), // ./gemstone0004
+    SpriteInfo(x: 66, y: 248, width: 48, height: 48,sourceWidth: 48, sourceHeight: 48,offsetX: 0, offsetY: 0), // ./gemstone0005
+    SpriteInfo(x: 166, y: 198, width: 48, height: 48,sourceWidth: 48, sourceHeight: 48,offsetX: 0, offsetY: 0), // ./gemstone0006
+    SpriteInfo(x: 264, y: 0, width: 48, height: 48,sourceWidth: 48, sourceHeight: 48,offsetX: 0, offsetY: 0), // ./gemstone0007
+    SpriteInfo(x: 0, y: 264, width: 48, height: 48,sourceWidth: 48, sourceHeight: 48,offsetX: 0, offsetY: 0), // ./gemstone0008
+    SpriteInfo(x: 116, y: 248, width: 48, height: 48,sourceWidth: 48, sourceHeight: 48,offsetX: 0, offsetY: 0), // ./gemstone0009
+    SpriteInfo(x: 248, y: 116, width: 48, height: 48,sourceWidth: 48, sourceHeight: 48,offsetX: 0, offsetY: 0), // ./gemstone0010
+    SpriteInfo(x: 216, y: 198, width: 48, height: 48,sourceWidth: 48, sourceHeight: 48,offsetX: 0, offsetY: 0), // ./gemstone0011
+    SpriteInfo(x: 166, y: 248, width: 48, height: 48,sourceWidth: 48, sourceHeight: 48,offsetX: 0, offsetY: 0), // ./gemstone0012
+    SpriteInfo(x: 298, y: 66, width: 48, height: 48,sourceWidth: 48, sourceHeight: 48,offsetX: 0, offsetY: 0), // ./gemstone0013
+    SpriteInfo(x: 66, y: 298, width: 48, height: 48,sourceWidth: 48, sourceHeight: 48,offsetX: 0, offsetY: 0), // ./gemstone0014
+    SpriteInfo(x: 314, y: 0, width: 48, height: 48,sourceWidth: 48, sourceHeight: 48,offsetX: 0, offsetY: 0), // ./gemstone0015
+    SpriteInfo(x: 116, y: 298, width: 48, height: 48,sourceWidth: 48, sourceHeight: 48,offsetX: 0, offsetY: 0), // ./gemstone0016
+    SpriteInfo(x: 298, y: 116, width: 48, height: 48,sourceWidth: 48, sourceHeight: 48,offsetX: 0, offsetY: 0), // ./gemstone0017
+    SpriteInfo(x: 216, y: 248, width: 48, height: 48,sourceWidth: 48, sourceHeight: 48,offsetX: 0, offsetY: 0), // ./gemstone0018
+    SpriteInfo(x: 266, y: 198, width: 48, height: 48,sourceWidth: 48, sourceHeight: 48,offsetX: 0, offsetY: 0), // ./gemstone0019
+    SpriteInfo(x: 166, y: 298, width: 48, height: 48,sourceWidth: 48, sourceHeight: 48,offsetX: 0, offsetY: 0), // ./gemstone0020
+    SpriteInfo(x: 266, y: 248, width: 48, height: 48,sourceWidth: 48, sourceHeight: 48,offsetX: 0, offsetY: 0), // ./gemstone0021
+    SpriteInfo(x: 216, y: 298, width: 48, height: 48,sourceWidth: 48, sourceHeight: 48,offsetX: 0, offsetY: 0), // ./gemstone0022
+    SpriteInfo(x: 316, y: 198, width: 48, height: 48,sourceWidth: 48, sourceHeight: 48,offsetX: 0, offsetY: 0), // ./gemstone0023
+    SpriteInfo(x: 266, y: 298, width: 48, height: 48,sourceWidth: 48, sourceHeight: 48,offsetX: 0, offsetY: 0), // ./gemstone0024
   ];
 
   static SpriteInfo get _0 => sprites[0];

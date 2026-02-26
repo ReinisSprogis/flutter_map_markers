@@ -4,8 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/flutter_map_markers.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_ref.dart';
 import 'package:flutter_map_markers_example/app_drawer.dart';
-import 'package:flutter_map_markers_example/demo_pages/diamond_marker_anim.dart';
+import 'package:flutter_map_markers_example/demo_pages/sprites/diamond_marker_anim.dart';
 import 'package:flutter_map_markers_example/utility/utility.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -18,7 +19,7 @@ class StaticSpriteManagerDemo extends StatefulWidget {
 }
 
 class _StaticSpriteManagerDemoState extends State<StaticSpriteManagerDemo> {
-  SpriteAtlas? _spriteAtlas;
+  SpriteAtlasSet? _spriteAtlasSet;
   List<SpriteFrameMarker> markers = [];
   int markerCount = 1000;
   int lastTime = 0;
@@ -42,7 +43,8 @@ class _StaticSpriteManagerDemoState extends State<StaticSpriteManagerDemo> {
   }
 
   Future<void> _loadAtlas() async {
-    _spriteAtlas = await _getAtlas();
+    final atlas = await _getAtlas();
+    _spriteAtlasSet = SpriteAtlasSet([atlas]);
     _generateSprites(1);
   }
 
@@ -66,7 +68,7 @@ class _StaticSpriteManagerDemoState extends State<StaticSpriteManagerDemo> {
           counterRotate: true,
           anchor: Alignment.bottomCenter,
           position: position,
-          spriteIndex: 0,
+          currentSpriteRef: SpriteRef(0, 0),
         );
       });
       markerCount = count;
@@ -78,7 +80,7 @@ class _StaticSpriteManagerDemoState extends State<StaticSpriteManagerDemo> {
     return Scaffold(
       appBar: AppBar(title: const Text('Static Sprite Manager Demo')),
       drawer: const AppDrawer(),
-      body: _spriteAtlas == null
+      body: _spriteAtlasSet == null
           ? const Center(child: CircularProgressIndicator())
           : Stack(
               children: [
@@ -96,7 +98,7 @@ class _StaticSpriteManagerDemoState extends State<StaticSpriteManagerDemo> {
                           'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                     ),
                     SpriteMarkerLayer(
-                      spriteAtlas: _spriteAtlas!,
+                      atlases: _spriteAtlasSet!,
                       markers: markers,
                     ),
                   ],

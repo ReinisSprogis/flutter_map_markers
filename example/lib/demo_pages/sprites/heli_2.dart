@@ -9,8 +9,8 @@ class Heli2 {
   Heli2._();
 
   static const List<SpriteInfo> sprites = [
-    SpriteInfo(x: 0, y: 0, width: 54, height: 69), // ./h5
-    SpriteInfo(x: 56, y: 0, width: 53, height: 69), // ./h6
+    SpriteInfo(x: 0, y: 0, width: 54, height: 69,sourceWidth: 54, sourceHeight: 69,offsetX: 0, offsetY: 0), // ./h5
+    SpriteInfo(x: 56, y: 0, width: 53, height: 69,sourceWidth: 53, sourceHeight: 69,offsetX: 0, offsetY: 0), // ./h6
   ];
 
   static SpriteInfo get h5 => sprites[0];

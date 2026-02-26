@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_markers/flutter_map_markers.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_ref.dart';
 import 'package:flutter_map_markers_example/app_drawer.dart';
 import 'package:flutter_map_markers_example/demo_pages/sprites/puffy_gems.dart';
 import 'package:flutter_map_markers_example/utility/utility.dart';
@@ -19,7 +20,7 @@ class SpriteLayerDemo extends StatefulWidget {
 
 class _SpriteLayerDemoState extends State<SpriteLayerDemo>
     with SingleTickerProviderStateMixin {
-  SpriteAtlas? _spriteAtlas;
+  SpriteAtlasSet? _spriteAtlasSet;
   late final AnimationPlayer _animationPlayer;
   List<SpriteSequenceMarker> markers = [];
   int markerCount = 1000;
@@ -58,7 +59,8 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
   }
 
   Future<void> _loadAtlas() async {
-    _spriteAtlas = await _getAtlas();
+    final atlas = await _getAtlas();
+    _spriteAtlasSet = SpriteAtlasSet([atlas]);
     _generateSprites(1);
     _animationPlayer.markers = markers;
   }
@@ -107,7 +109,18 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
               counterRotate: true,
               mode: AnimationMode.forwardOnce,
               fps: 20,
-              frames: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+              frames: [
+                SpriteRef(0, 0),
+                SpriteRef(0, 1),
+                SpriteRef(0, 2),
+                SpriteRef(0, 3),
+                SpriteRef(0, 4),
+                SpriteRef(0, 5),
+                SpriteRef(0, 6),
+                SpriteRef(0, 7),
+                SpriteRef(0, 8),
+                SpriteRef(0, 9),
+               ],
               onAnimationEnd: () {
                 markers[index].isVisible = false;
               
@@ -121,30 +134,30 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
               frameIndex: random.nextInt(24),
               transform: Offset(0, 0),
               frames: [
-                11,
-                12,
-                13,
-                14,
-                15,
-                16,
-                17,
-                18,
-                19,
-                20,
-                21,
-                22,
-                23,
-                24,
-                25,
-                26,
-                27,
-                28,
-                29,
-                30,
-                31,
-                32,
-                33,
-                34,
+                SpriteRef(0, 11),
+                SpriteRef(0, 12),
+                SpriteRef(0, 13),
+                SpriteRef(0, 14),
+                SpriteRef(0, 15),
+                SpriteRef(0, 16),
+                SpriteRef(0, 17),
+                SpriteRef(0, 18),
+                SpriteRef(0, 19),
+                SpriteRef(0, 20),
+                SpriteRef(0, 21),
+                SpriteRef(0, 22),
+                SpriteRef(0, 23),
+                SpriteRef(0, 24),
+                SpriteRef(0, 25),
+                SpriteRef(0, 26),
+                SpriteRef(0, 27),
+                SpriteRef(0, 28),
+                SpriteRef(0, 29),
+                SpriteRef(0, 30),
+                SpriteRef(0, 31),
+                SpriteRef(0, 32),
+                SpriteRef(0, 33),
+                SpriteRef(0, 34),
               ],
             ),
           ],
@@ -163,7 +176,7 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
     return Scaffold(
       appBar: AppBar(title: const Text('Gemstone Demo')),
       drawer: const AppDrawer(),
-      body: _spriteAtlas == null
+      body: _spriteAtlasSet == null
           ? const Center(child: CircularProgressIndicator())
           : Stack(
               children: [
@@ -184,7 +197,7 @@ class _SpriteLayerDemoState extends State<SpriteLayerDemo>
                       MarkerLayer(markers: flutterMarkers),
                     if (!showFlutterMarkers)
                       SpriteMarkerLayer(
-                        spriteAtlas: _spriteAtlas!,
+                        atlases: _spriteAtlasSet!,
                         markers: markers,
                         animationPlayer: _animationPlayer,
                       ),
