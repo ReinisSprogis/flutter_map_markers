@@ -12,3 +12,6 @@ export 'sprite_marker_layer/sprite_util.dart';
 export 'sprite_marker_layer/model/animation_mode.dart';
 export 'sprite_marker_layer/model/sequence.dart';
 export 'sprite_marker_layer/marker_core.dart';
+export 'sprite_marker_layer/model/sprite_info.dart';
+export 'sprite_marker_layer/model/sprite_atlas_set.dart';
+export 'sprite_marker_layer/model/sprite_ref.dart';
