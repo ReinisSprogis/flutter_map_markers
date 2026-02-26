@@ -1,50 +1,7 @@
 import 'dart:ui' as ui;
 
-/// Information about a single sprite within a sprite atlas.
-class SpriteInfo {
-  /// Creates sprite information with position and size within an atlas.
-  const SpriteInfo({
-    this.id,
-    required this.x,
-    required this.y,
-    required this.width,
-    required this.height,
-  });
+import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_info.dart';
 
-  /// Optional unique identifier for the sprite.
-  final String? id;
-
-  /// X position of the sprite in the atlas.
-  final double x;
-
-  /// Y position of the sprite in the atlas.
-  final double y;
-
-  /// Width of the sprite.
-  final double width;
-
-  /// Height of the sprite.
-  final double height;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is SpriteInfo &&
-          runtimeType == other.runtimeType &&
-          x == other.x &&
-          y == other.y &&
-          width == other.width &&
-          height == other.height &&
-          id == other.id;
-
-  @override
-  int get hashCode =>
-      x.hashCode ^ y.hashCode ^ width.hashCode ^ height.hashCode ^ (id?.hashCode ?? 0);
-
-  @override
-  String toString() =>
-      'SpriteInfo(x: $x, y: $y, width: $width, height: $height, id: $id)';
-}
 
 /// A sprite atlas containing an image and information about sprites within it.
 class SpriteAtlas {
@@ -64,8 +21,8 @@ class SpriteAtlas {
   factory SpriteAtlas.horizontal({
     required ui.Image image,
     required int spriteCount,
-    required double spriteWidth,
-    required double spriteHeight,
+    required int spriteWidth,
+    required int spriteHeight,
   }) {
     final sprites = List.generate(spriteCount, (index) {
       return SpriteInfo(
@@ -73,6 +30,10 @@ class SpriteAtlas {
         y: 0,
         width: spriteWidth,
         height: spriteHeight,
+        sourceWidth: spriteWidth,
+        sourceHeight: spriteHeight,
+        offsetX: 0,
+        offsetY: 0,
       );
     });
 
@@ -86,8 +47,8 @@ class SpriteAtlas {
   factory SpriteAtlas.vertical({
     required ui.Image image,
     required int spriteCount,
-    required double spriteWidth,
-    required double spriteHeight,
+    required int spriteWidth,
+    required int spriteHeight,
   }) {
     final sprites = List.generate(spriteCount, (index) {
       return SpriteInfo(
@@ -95,6 +56,10 @@ class SpriteAtlas {
         y: index * spriteHeight,
         width: spriteWidth,
         height: spriteHeight,
+        sourceWidth: spriteWidth,
+        sourceHeight: spriteHeight,
+        offsetX: 0,
+        offsetY: 0,
       );
     });
 
@@ -115,8 +80,8 @@ class SpriteAtlas {
     required ui.Image image,
     required int columns,
     required int rows,
-    required double spriteWidth,
-    required double spriteHeight,
+    required int spriteWidth,
+    required int spriteHeight,
   }) {
     final sprites = <SpriteInfo>[];
 
@@ -128,6 +93,10 @@ class SpriteAtlas {
             y: row * spriteHeight,
             width: spriteWidth,
             height: spriteHeight,
+            sourceWidth: spriteWidth,
+            sourceHeight: spriteHeight,
+            offsetX: 0,
+            offsetY: 0,
           ),
         );
       }
