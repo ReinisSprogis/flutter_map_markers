@@ -5,6 +5,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/animation_mode.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/markers/sprite_marker.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/sequence.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_ref.dart';
 
 part 'model/animation_player.dart';
 part 'model/markers/sprite_sequence_marker.dart';
