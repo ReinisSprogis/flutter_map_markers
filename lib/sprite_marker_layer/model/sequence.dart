@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map_markers/sprite_marker_layer/model/animation_mode.dart';
+import 'package:flutter_map_markers/sprite_marker_layer/model/sprite_ref.dart';
 
 class Sequence {
-  final List<int> frames;
+  final List<SpriteRef> frames;
   int frameIndex;
   final int fps;
   final AnimationMode mode;
