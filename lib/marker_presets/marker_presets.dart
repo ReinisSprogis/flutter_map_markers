@@ -178,7 +178,12 @@ class MarkerPresets {
       position: position,
       size: (center, metersToPixels, latLngToPixelOffset, zoomLevel) {
         // Ensure the size encompasses the entire raindrop
-        final Rect bounds = Rect.fromLTRB(center.dx - radius, center.dy - radius * 3, center.dx + radius, center.dy);
+        final Rect bounds = Rect.fromLTRB(
+          center.dx - radius,
+          center.dy - radius * 3,
+          center.dx + radius,
+          center.dy,
+        );
         return bounds;
       },
       hitArea: (center, metersToPixels, latLngToPixelOffset, zoomLevel) {
@@ -337,25 +342,24 @@ class MarkerPresets {
               canvas.drawCircle(center, 5, fillPaint);
               canvas.drawCircle(center, 5, borderPaint);
             } else {
-               // Draw the full marker otherwise
-            Path markerPath = createMarkerPath(
-              center,
-              width,
-              height,
-              cornerRadius,
-            );
-            canvas.drawPath(markerPath, fillPaint);
-            canvas.drawPath(markerPath, borderPaint);
+              // Draw the full marker otherwise
+              Path markerPath = createMarkerPath(
+                center,
+                width,
+                height,
+                cornerRadius,
+              );
+              canvas.drawPath(markerPath, fillPaint);
+              canvas.drawPath(markerPath, borderPaint);
 
-            final textOffset =
-                center -
-                Offset(
-                  textPainter.width / 2,
-                  (height + 5) / 2 + textPainter.height / 2,
-                );
-            textPainter.paint(canvas, textOffset);
+              final textOffset =
+                  center -
+                  Offset(
+                    textPainter.width / 2,
+                    (height + 5) / 2 + textPainter.height / 2,
+                  );
+              textPainter.paint(canvas, textOffset);
             }
-           
           },
       onTap: onTap,
     );

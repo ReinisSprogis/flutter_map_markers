@@ -70,7 +70,7 @@ class _IconMarkerDemoPageState extends State<IconMarkerDemoPage> {
                 urlTemplate:
                     'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
               ),
-              CanvasMarkerLayer(markers: markers, showDebugRect: true,),
+              CanvasMarkerLayer(markers: markers, showDebugRect: true),
             ],
           ),
           // if (!kIsWeb && true)

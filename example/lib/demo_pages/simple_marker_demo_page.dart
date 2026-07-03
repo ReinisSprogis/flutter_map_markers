@@ -26,10 +26,7 @@ class _SimpleMarkerDemoPageState extends State<SimpleMarkerDemoPage> {
   }
 
   CanvasMarker _createMarker(LatLng position) {
-    return MarkerPresets.raindropMarker(
-      position: position,
-      radius: 12,
-    );
+    return MarkerPresets.raindropMarker(position: position, radius: 12);
   }
 
   @override

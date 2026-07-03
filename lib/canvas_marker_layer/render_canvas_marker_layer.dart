@@ -306,7 +306,7 @@ class RenderCanvasMarkerLayer extends RenderBox {
       canvas.rotate(-camera.rotationRad);
       canvas.translate(-screenOffset.dx, -screenOffset.dy);
     }
-    
+
     // Paint the marker.
     marker.painter(
       canvas,
@@ -322,10 +322,15 @@ class RenderCanvasMarkerLayer extends RenderBox {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.0;
 
-       canvas.drawRect(marker.size!(screenOffset,
-        (meters, latLong) => _metersToPixels(latLong, meters),
-        (latLng, {referencePoint}) => camera.getOffsetFromOrigin(latLng),
-        camera.zoom.ceil()), debugPaint);
+      canvas.drawRect(
+        marker.size!(
+          screenOffset,
+          (meters, latLong) => _metersToPixels(latLong, meters),
+          (latLng, {referencePoint}) => camera.getOffsetFromOrigin(latLng),
+          camera.zoom.ceil(),
+        ),
+        debugPaint,
+      );
     }
 
     if (paintDebugHitArea && marker.hitArea != null) {
@@ -395,7 +400,7 @@ class RenderCanvasMarkerLayer extends RenderBox {
 
       // Only start a tap recognizer for the first pointer.
       //
-      // 
+      //
       // - Taps are single-pointer gestures.
       // - If multi-touch happens later (pinch/rotate), the recognizer will be
       //   cancelled by the arena and we also guard via
