@@ -33,7 +33,10 @@ class _PriceTagMarkerDemoState extends State<PriceTagMarkerDemo> {
       final LatLng markerPosition = Utility.clusterPoint(london, random);
 
       /// Generates a marker at the given position with the specified styles and behaviors.
-      final marker = _generateMarker(markerPosition, random.nextInt(5000) + 500);
+      final marker = _generateMarker(
+        markerPosition,
+        random.nextInt(5000) + 500,
+      );
       generatedMarkers.add(marker);
     }
 
@@ -50,7 +53,9 @@ class _PriceTagMarkerDemoState extends State<PriceTagMarkerDemo> {
       onTap: () {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Marker at (${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}) with price £$price tapped!'),
+            content: Text(
+              'Marker at (${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}) with price £$price tapped!',
+            ),
             duration: Duration(seconds: 1),
           ),
         );
@@ -64,9 +69,17 @@ class _PriceTagMarkerDemoState extends State<PriceTagMarkerDemo> {
       drawer: const AppDrawer(),
       appBar: AppBar(title: const Text('Price tag Marker')),
       body: FlutterMap(
-        options: MapOptions(initialCenter: LatLng(51.5074, -0.1278), initialZoom: 10, maxZoom: 18, minZoom: 1),
+        options: MapOptions(
+          initialCenter: LatLng(51.5074, -0.1278),
+          initialZoom: 10,
+          maxZoom: 18,
+          minZoom: 1,
+        ),
         children: [
-          TileLayer(userAgentPackageName: 'com.flutter_map_markers.example', urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
+          TileLayer(
+            userAgentPackageName: 'com.flutter_map_markers.example',
+            urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          ),
           CanvasMarkerLayer(markers: markers),
         ],
       ),
