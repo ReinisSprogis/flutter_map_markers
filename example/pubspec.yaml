@@ -11,13 +11,11 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  flutter_map: ^8.2.2
-  flutter_map_markers:
-  latlong2: ^0.9.1
+  flutter_map: ^8.3.1
+  flutter_map_markers: 0.1.1
+  latlong2: ">=0.9.1 <0.11.0"
 
-dependency_overrides: 
-  flutter_map_markers:
-    path: ../
+
 
 dev_dependencies:
   flutter_test:
