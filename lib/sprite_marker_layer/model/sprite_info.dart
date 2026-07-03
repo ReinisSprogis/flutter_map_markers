@@ -18,16 +18,26 @@ class SpriteInfo {
 
   /// X position of the sprite in the atlas.
   final int x;
+
+  /// Y position of the sprite in the atlas.
   final int y;
+
+  /// Width of the sprite in the atlas.
   final int width;
+
+  /// Height of the sprite in the atlas.
   final int height;
 
-  // Original untrimmed size
+  /// Original untrimmed size width of the sprite before packing.
   final int sourceWidth;
+  
+  /// Original untrimmed size height of the sprite before packing.
   final int sourceHeight;
 
-  // Position of trimmed rect inside original image
+  /// Position X of trimmed rect inside original image
   final int offsetX;
+
+  /// Position Y of trimmed rect inside original image
   final int offsetY;
 
   @override
